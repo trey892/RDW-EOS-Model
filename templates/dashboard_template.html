@@ -1,0 +1,1846 @@
+<title>RDW Fleet Operations</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f6f4ef;
+    --surface: #ffffff;
+    --surface-2: #fbf9f4;
+    --ink: #15181d;
+    --ink-2: #565f6c;
+    --muted: #7c8494;
+    --border: rgba(10,12,16,0.11);
+    --grid: #e7e2d7;
+    --accent: #c9791f;
+    --accent-ink: #ffffff;
+    --accent-wash: rgba(201,121,31,0.10);
+    --good: #0ca30c;
+    --warning: #b9840f;
+    --serious: #c65a30;
+    --critical: #d03b3b;
+    --s-company: #2a78d6;
+    --s-lp: #eb6834;
+    --s-oo: #1baf7a;
+    --s-chemical: #4a3aa7;
+    --s-waste: #008300;
+    --s-pos: #2a78d6;
+    --s-neg: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0b0e12;
+      --surface: #12161c;
+      --surface-2: #171d25;
+      --ink: #eef1f5;
+      --ink-2: #99a3b1;
+      --muted: #6b7684;
+      --border: rgba(255,255,255,0.09);
+      --grid: #232a34;
+      --accent: #f0a63a;
+      --accent-ink: #1a1206;
+      --accent-wash: rgba(240,166,58,0.14);
+      --good: #0ca30c;
+      --warning: #fab219;
+      --serious: #ec835a;
+      --critical: #e66767;
+      --s-company: #3987e5;
+      --s-lp: #d95926;
+      --s-oo: #199e70;
+      --s-chemical: #9085e9;
+      --s-waste: #1fa61f;
+      --s-pos: #3987e5;
+      --s-neg: #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0b0e12;
+    --surface: #12161c;
+    --surface-2: #171d25;
+    --ink: #eef1f5;
+    --ink-2: #99a3b1;
+    --muted: #6b7684;
+    --border: rgba(255,255,255,0.09);
+    --grid: #232a34;
+    --accent: #f0a63a;
+    --accent-ink: #1a1206;
+    --accent-wash: rgba(240,166,58,0.14);
+    --good: #0ca30c;
+    --warning: #fab219;
+    --serious: #ec835a;
+    --critical: #e66767;
+    --s-company: #3987e5;
+    --s-lp: #d95926;
+    --s-oo: #199e70;
+    --s-chemical: #9085e9;
+    --s-waste: #1fa61f;
+    --s-pos: #3987e5;
+    --s-neg: #e66767;
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --page: #f6f4ef; --surface: #ffffff; --surface-2: #fbf9f4;
+    --ink: #15181d; --ink-2: #565f6c; --muted: #7c8494;
+    --border: rgba(10,12,16,0.11); --grid: #e7e2d7;
+    --accent: #c9791f; --accent-ink: #ffffff; --accent-wash: rgba(201,121,31,0.10);
+    --good: #0ca30c; --warning: #b9840f; --serious: #c65a30; --critical: #d03b3b;
+    --s-company: #2a78d6; --s-lp: #eb6834; --s-oo: #1baf7a;
+    --s-chemical: #4a3aa7; --s-waste: #008300; --s-pos: #2a78d6; --s-neg: #e34948;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono {
+    font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, "Roboto Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  /* ---------- Header / gantry ---------- */
+  .gantry {
+    background: var(--surface);
+    border-bottom: 3px solid var(--accent);
+    padding: 22px clamp(16px, 4vw, 40px) 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gantry::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(135deg, var(--accent) 0 14px, transparent 14px 28px);
+    opacity: 0.06;
+    pointer-events: none;
+  }
+  .gantry-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .gantry h1 {
+    margin: 2px 0 0;
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .gantry .meta {
+    font-size: 12.5px;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+  .gantry .meta .mono { color: var(--ink); }
+  .theme-note {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* ---------- Ticker strip ---------- */
+  .ticker {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .tile {
+    background: var(--surface-2);
+    padding: 14px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .tile .label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tile .value {
+    font-size: clamp(20px, 2.6vw, 27px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .tile .sub {
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .tile.accent .value { color: var(--accent); }
+  .tile.crit .value { color: var(--critical); }
+  .tile.warn .value { color: var(--warning); }
+
+  /* ---------- Filter bar ---------- */
+  .filterbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    padding: 14px clamp(16px, 4vw, 40px);
+    background: var(--page);
+    border-bottom: 1px solid var(--border);
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-group .fg-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+  .pill {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-2);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 13px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .pill:hover { border-color: var(--accent); color: var(--ink); }
+  .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .pill[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  select.pill {
+    padding-right: 26px;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+    background-position: calc(100% - 14px) 55%, calc(100% - 9px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+  .reset-btn {
+    appearance: none;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 6px 4px;
+  }
+  .reset-btn:hover { color: var(--ink); }
+  .filter-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ---------- Chart grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 14px;
+    padding: 16px clamp(16px, 4vw, 40px) 40px;
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  .panel.wide { grid-column: 1 / -1; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .panel-title { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+  .panel-note { font-size: 11px; color: var(--muted); }
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); }
+  .legend .lg-item { display: flex; align-items: center; gap: 5px; }
+  .legend .swatch { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .chart-svg { width: 100%; height: auto; overflow: visible; }
+  .bar { transition: opacity 0.12s; }
+  .bar:hover { opacity: 0.82; }
+  .axis-label { font-size: 10px; fill: var(--muted); }
+  .value-label { font-size: 11px; font-weight: 700; fill: var(--ink); font-family: ui-monospace, monospace; }
+  .cat-label { font-size: 11px; fill: var(--ink-2); }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .baseline { stroke: var(--muted); stroke-width: 1; }
+
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: var(--ink);
+    color: var(--page);
+    font-size: 11.5px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    line-height: 1.45;
+    opacity: 0;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.08s;
+    z-index: 50;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip b { font-family: ui-monospace, monospace; }
+
+  /* ---------- QA / footer ---------- */
+  .qa-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+    padding: 14px clamp(16px, 4vw, 40px) 26px;
+    border-top: 1px solid var(--border);
+  }
+  .qa-strip .fg-label { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .status-dot.PASS { background: var(--good); }
+  .status-dot.REVIEW { background: var(--warning); }
+  .status-dot.FAIL { background: var(--critical); }
+  .status-dot.SUPERSEDED { background: var(--muted); }
+  .foot-note { font-size: 11px; color: var(--muted); max-width: 70ch; }
+
+  /* ---------- View switch ---------- */
+  .view-switch {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .view-switch .pill {
+    border: none;
+    background: none;
+    padding: 6px 14px;
+  }
+  .view-switch .pill:hover { border-color: transparent; }
+  .view-switch .pill[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  /* ---------- Data table ---------- */
+  .table-wrap { overflow-x: auto; }
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  table.data-table th, table.data-table td {
+    padding: 7px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.data-table th {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+  }
+  table.data-table th:hover { color: var(--ink); }
+  table.data-table th.sorted::after { content: " \25BE"; color: var(--accent); }
+  table.data-table td.num { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; text-align: right; }
+  table.data-table tbody tr:hover { background: var(--accent-wash); }
+  .type-chip {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .theme-note { display: none; }
+  }
+</style>
+
+<header class="gantry">
+  <div class="gantry-row">
+    <div>
+      <div class="eyebrow">Robbie D. Wood, Inc &middot; RDW EOS</div>
+      <h1 id="page-title">Fleet Operations Dashboard</h1>
+      <div class="meta" id="page-meta">Live filtering over <span class="mono" id="meta-count">&mdash;</span> active tractors, built from <span class="mono">RDW_EOS_Master_v5.xlsx</span>. Fuel data covers <span class="mono" id="meta-fuel-period">&mdash;</span>; movements from the <span class="mono" id="meta-mv-period">&mdash;</span>.</div>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+      <div class="view-switch" id="view-switch" role="tablist" aria-label="Dashboard view">
+        <button class="pill" data-view="fleet" role="tab">Fleet Operations</button>
+        <button class="pill" data-view="assets" role="tab">Asset Inventory</button>
+        <button class="pill" data-view="maintenance" role="tab">Maintenance</button>
+        <button class="pill" data-view="lease" role="tab">Insured &amp; Leased</button>
+      </div>
+      <div class="theme-note" id="theme-note">Revenue confidence varies by unit &mdash; see chip on each figure</div>
+    </div>
+  </div>
+</header>
+
+<section class="view" id="view-fleet">
+  <div class="ticker" id="ticker"></div>
+
+  <div class="filterbar">
+    <div class="filter-group">
+      <span class="fg-label">Division</span>
+      <div id="filter-division"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Ownership</span>
+      <div id="filter-ownership"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Terminal</span>
+      <select class="pill" id="filter-terminal"></select>
+    </div>
+    <button class="reset-btn" id="reset-filters">Reset filters</button>
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <div class="qa-strip">
+    <span class="fg-label">Model health</span>
+    <div id="qa-chips"></div>
+    <span class="foot-note">Per-tractor Contribution mixes revenue confidences (LOW = single-week estimate, MEDIUM = multi-month driver-actual) &mdash; treat cross-ownership comparisons directionally, not to the dollar. Full detail and QA_Exceptions in RDW_EOS_Master_v5.xlsx.</span>
+  </div>
+</section>
+
+<section class="view" id="view-assets" style="display:none">
+  <div class="ticker" id="asset-ticker"></div>
+
+  <div class="filterbar">
+    <div class="filter-group">
+      <span class="fg-label">Asset Type</span>
+      <div id="filter-assettype"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Ownership</span>
+      <div id="filter-assetownership"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Terminal</span>
+      <select class="pill" id="filter-assetterminal"></select>
+    </div>
+    <div class="filter-group" style="flex:1; min-width:200px;">
+      <input type="search" class="pill" id="asset-search" placeholder="Search asset #, make, model&hellip;" style="width:100%; max-width:260px; border-radius:8px; cursor:text;">
+    </div>
+    <button class="reset-btn" id="reset-asset-filters">Reset filters</button>
+    <span class="filter-count" id="asset-filter-count"></span>
+  </div>
+
+  <main class="grid" id="asset-grid"></main>
+
+  <div class="panel wide" style="margin: 0 clamp(16px, 4vw, 40px) 24px;">
+    <div class="panel-head">
+      <div class="panel-title">Asset Register</div>
+      <div class="panel-note" id="asset-table-note"></div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="asset-table">
+        <thead>
+          <tr>
+            <th data-sort="assetId">Asset #</th>
+            <th data-sort="assetType">Type</th>
+            <th data-sort="ownership">Ownership</th>
+            <th data-sort="division">Division</th>
+            <th data-sort="terminal">Terminal</th>
+            <th data-sort="year">Year</th>
+            <th data-sort="make">Make / Model</th>
+            <th data-sort="age">Age</th>
+            <th data-sort="netBookValue">Net Book Value</th>
+          </tr>
+        </thead>
+        <tbody id="asset-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="view-maintenance" style="display:none">
+  <div class="ticker" id="maint-ticker"></div>
+
+  <div class="filterbar">
+    <div class="filter-group">
+      <span class="fg-label">Division</span>
+      <div id="filter-maintdivision"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Ownership</span>
+      <div id="filter-maintownership"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Terminal</span>
+      <select class="pill" id="filter-maintterminal"></select>
+    </div>
+    <div class="filter-group" style="flex:1; min-width:200px;">
+      <input type="search" class="pill" id="wo-search" placeholder="Search tractor #, work order, or PM&hellip;" style="width:100%; max-width:260px; border-radius:8px; cursor:text;">
+    </div>
+    <button class="reset-btn" id="reset-maint-filters">Reset filters</button>
+    <span class="filter-count" id="maint-filter-count"></span>
+  </div>
+
+  <main class="grid" id="maint-grid"></main>
+
+  <div class="panel wide" style="margin: 0 clamp(16px, 4vw, 40px) 24px;">
+    <div class="panel-head">
+      <div class="panel-title">PM Due List</div>
+      <div class="panel-note" id="pm-due-table-note"></div>
+    </div>
+    <div class="panel-note" style="font-size:11.5px; line-height:1.5; margin-bottom:4px;" id="pm-due-source-note"></div>
+    <div class="table-wrap">
+      <table class="data-table" id="pm-due-table">
+        <thead>
+          <tr>
+            <th data-sort="assetId">Tractor #</th>
+            <th data-sort="pmDescription">PM</th>
+            <th data-sort="cycleType">Basis</th>
+            <th data-sort="interval">Interval</th>
+            <th data-sort="dueAt">Due At</th>
+            <th data-sort="dueIn">Due In</th>
+            <th data-sort="dueStatus">Status</th>
+            <th data-sort="scheduled">Scheduled</th>
+          </tr>
+        </thead>
+        <tbody id="pm-due-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel wide" style="margin: 0 clamp(16px, 4vw, 40px) 24px;">
+    <div class="panel-head">
+      <div class="panel-title">Work Order History</div>
+      <div class="panel-note" id="wo-table-note"></div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="wo-table">
+        <thead>
+          <tr>
+            <th data-sort="assetId">Tractor #</th>
+            <th data-sort="workOrderKey">Work Order</th>
+            <th data-sort="openedDate">Opened</th>
+            <th data-sort="closedDate">Closed</th>
+            <th data-sort="parts">Parts</th>
+            <th data-sort="tires">Tires</th>
+            <th data-sort="labor">Labor</th>
+            <th data-sort="outside">Outside</th>
+            <th data-sort="totalCost">Total Cost</th>
+            <th data-sort="isOpen">Status</th>
+          </tr>
+        </thead>
+        <tbody id="wo-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="view-lease" style="display:none">
+  <div class="ticker" id="lease-ticker"></div>
+
+  <div class="filterbar">
+    <div class="filter-group">
+      <span class="fg-label">Type</span>
+      <div id="filter-leasetype"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Coverage</span>
+      <div id="filter-leasecoverage"></div>
+    </div>
+    <div class="filter-group">
+      <span class="fg-label">Lessor</span>
+      <select class="pill" id="filter-leaselessor"></select>
+    </div>
+    <div class="filter-group" style="flex:1; min-width:200px;">
+      <input type="search" class="pill" id="lease-search" placeholder="Search unit #, make, owner&hellip;" style="width:100%; max-width:260px; border-radius:8px; cursor:text;">
+    </div>
+    <button class="reset-btn" id="reset-lease-filters">Reset filters</button>
+    <span class="filter-count" id="lease-filter-count"></span>
+  </div>
+
+  <main class="grid" id="lease-grid"></main>
+
+  <div class="panel wide" style="margin: 0 clamp(16px, 4vw, 40px) 24px;">
+    <div class="panel-head">
+      <div class="panel-title">Insured Value &amp; Lease Register</div>
+      <div class="panel-note" id="lease-table-note"></div>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="lease-table">
+        <thead>
+          <tr>
+            <th data-sort="assetId">Unit #</th>
+            <th data-sort="assetType">Type</th>
+            <th data-sort="year">Year</th>
+            <th data-sort="make">Make / Model</th>
+            <th data-sort="owner">Owner</th>
+            <th data-sort="status">Status</th>
+            <th data-sort="insuredValue">Insured Value</th>
+            <th data-sort="monthlyLeaseRate">Monthly Lease</th>
+            <th data-sort="lessor">Lessor</th>
+          </tr>
+        </thead>
+        <tbody id="lease-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = /*__DATA__*/;
+const ASSET_DATA = /*__ASSET_DATA__*/;
+const MAINT_DATA = /*__MAINT_DATA__*/;
+const LEASE_DATA = /*__LEASE_DATA__*/;
+
+const fmtUSD = (v) => v == null ? "—" : (Math.abs(v) >= 1000 ? "$" + Math.round(v / 1000).toLocaleString() + "k" : "$" + Math.round(v).toLocaleString());
+const fmtUSDFull = (v) => v == null ? "—" : "$" + Math.round(v).toLocaleString();
+const fmtNum = (v, d = 0) => v == null ? "—" : v.toLocaleString(undefined, {maximumFractionDigits: d, minimumFractionDigits: d});
+const fmtPct = (v, d = 1) => v == null ? "—" : v.toFixed(d) + "%";
+const mean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : null;
+const sum = (arr) => arr.reduce((a,b)=>a+b,0);
+const clean = (arr, key) => arr.map(d => d[key]).filter(v => v != null);
+
+const state = { division: "All", ownership: "All", terminal: "All" };
+
+const OWNERSHIP_ORDER = ["Company", "Lease Purchase", "Owner Operator"];
+const OWNERSHIP_COLOR = { "Company": "var(--s-company)", "Lease Purchase": "var(--s-lp)", "Owner Operator": "var(--s-oo)" };
+const DIVISION_ORDER = ["Chemical", "Waste"];
+const DIVISION_COLOR = { "Chemical": "var(--s-chemical)", "Waste": "var(--s-waste)" };
+
+function terminals() {
+  const set = new Set(DATA.tractors.map(t => t.terminal).filter(Boolean));
+  return Array.from(set).sort();
+}
+
+function filtered() {
+  return DATA.tractors.filter(t => {
+    if (state.division !== "All" && t.division !== state.division) return false;
+    if (state.ownership !== "All" && t.ownership !== state.ownership) return false;
+    if (state.terminal !== "All" && t.terminal !== state.terminal) return false;
+    return true;
+  });
+}
+
+function tooltip(html, x, y) {
+  const tt = document.getElementById("tooltip");
+  tt.innerHTML = html;
+  tt.style.left = x + "px";
+  tt.style.top = (y - 10) + "px";
+  tt.classList.add("show");
+}
+function hideTooltip() {
+  document.getElementById("tooltip").classList.remove("show");
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+/* ---------------- Ticker ---------------- */
+function renderTicker(rows) {
+  const revenue = sum(clean(rows, "revenue"));
+  const contribution = sum(clean(rows, "contribution"));
+  const margin = revenue ? (contribution / revenue * 100) : null;
+  const mpg = mean(clean(rows, "mpg"));
+  // A $0 revenue week (LOW-confidence single-week estimate) is a data gap, not
+  // a confirmed loss -- keep the two separate so one doesn't masquerade as the other.
+  const zeroRevenue = rows.filter(t => t.revenue === 0);
+  const confirmedLoss = rows.filter(t => t.contribution != null && t.contribution < 0 && t.revenue > 0);
+  const deadhead = mean(clean(rows, "deadheadPct"));
+
+  const tiles = [
+    { label: "Active tractors", value: fmtNum(rows.length), sub: rows.length ? Math.round(rows.length / DATA.tractors.length * 100) + "% of fleet" : "" },
+    { label: "Annualized revenue", value: fmtUSD(revenue), sub: "best-available per unit" },
+    { label: "Annualized contribution", value: fmtUSD(contribution), sub: margin != null ? fmtPct(margin) + " margin" : "", cls: contribution < 0 ? "crit" : "accent" },
+    { label: "Confirmed loss-making", value: fmtNum(confirmedLoss.length), sub: "revenue > 0, contribution < 0", cls: confirmedLoss.length > 0 ? "crit" : "" },
+    { label: "Zero-revenue gap", value: fmtNum(zeroRevenue.length), sub: "LOW-confidence week read $0 — not a confirmed loss", cls: zeroRevenue.length > 0 ? "warn" : "" },
+    { label: "Avg fuel efficiency", value: mpg != null ? mpg.toFixed(2) + " MPG" : "—", sub: "Samsara, " + DATA.meta.fuelPeriod },
+    { label: "Avg deadhead", value: deadhead != null ? fmtPct(deadhead) : "—", sub: "empty / total miles" },
+  ];
+
+  const el = document.getElementById("ticker");
+  el.innerHTML = "";
+  tiles.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "tile" + (t.cls ? " " + t.cls : "");
+    div.innerHTML = `<div class="label">${t.label}</div><div class="value mono">${t.value}</div><div class="sub">${t.sub}</div>`;
+    el.appendChild(div);
+  });
+}
+
+/* ---------------- Bar chart (vertical, categorical) ---------------- */
+function verticalBarChart(svg, data, opts) {
+  // data: [{label, value, color}], opts: {width, height, format, valueDomain}
+  const W = opts.width, H = opts.height;
+  const padL = 44, padR = 12, padT = 10, padB = 28;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxAbs = opts.valueDomain || Math.max(1, ...data.map(d => Math.abs(d.value || 0)));
+  const zeroY = opts.allowNegative ? padT + plotH * (maxAbs / (2 * maxAbs)) : padT + plotH;
+  const scaleY = (v) => opts.allowNegative
+    ? zeroY - (v / maxAbs) * (plotH / 2)
+    : padT + plotH - (Math.max(v, 0) / maxAbs) * plotH;
+
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  // gridlines
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const frac = i / steps;
+    const y = opts.allowNegative ? padT + plotH * frac : padT + plotH - plotH * frac;
+    svg.appendChild(svgEl("line", { x1: padL, x2: W - padR, y1: y, y2: y, class: "gridline" }));
+  }
+  // baseline
+  const baseY = opts.allowNegative ? zeroY : padT + plotH;
+  svg.appendChild(svgEl("line", { x1: padL, x2: W - padR, y1: baseY, y2: baseY, class: "baseline" }));
+
+  const n = data.length;
+  const bw = Math.min(56, plotW / n * 0.55);
+  data.forEach((d, i) => {
+    const cx = padL + (plotW / n) * (i + 0.5);
+    const y1 = scaleY(0), y2 = scaleY(d.value);
+    const top = Math.min(y1, y2), h = Math.max(1, Math.abs(y2 - y1));
+    const rect = svgEl("rect", {
+      x: cx - bw / 2, y: top, width: bw, height: h, rx: 4,
+      fill: d.color, class: "bar",
+    });
+    rect.addEventListener("mousemove", (e) => tooltip(d.tooltip || `<b>${opts.format(d.value)}</b>`, e.clientX, e.clientY));
+    rect.addEventListener("mouseleave", hideTooltip);
+    svg.appendChild(rect);
+
+    const label = svgEl("text", { x: cx, y: top - 6, class: "value-label", "text-anchor": "middle" });
+    label.textContent = opts.format(d.value);
+    svg.appendChild(label);
+
+    const cat = svgEl("text", { x: cx, y: H - 8, class: "cat-label", "text-anchor": "middle" });
+    cat.textContent = d.label;
+    svg.appendChild(cat);
+  });
+}
+
+/* ---------------- Horizontal diverging bar chart (per-unit) ---------------- */
+function diverging(svg, data, opts) {
+  const W = opts.width, H = opts.height;
+  const padL = 74, padR = 56, padT = 6, padB = 6;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxAbs = Math.max(1, ...data.map(d => Math.abs(d.value)));
+  const midX = padL + plotW / 2;
+  const scaleX = (v) => midX + (v / maxAbs) * (plotW / 2);
+
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.appendChild(svgEl("line", { x1: midX, x2: midX, y1: padT, y2: H - padB, class: "baseline" }));
+
+  const n = data.length;
+  const rh = Math.min(22, plotH / n * 0.62);
+  data.forEach((d, i) => {
+    const cy = padT + (plotH / n) * (i + 0.5);
+    const x1 = scaleX(0), x2 = scaleX(d.value);
+    const left = Math.min(x1, x2), w = Math.max(1, Math.abs(x2 - x1));
+    const rect = svgEl("rect", {
+      x: left, y: cy - rh / 2, width: w, height: rh, rx: 3,
+      fill: d.value >= 0 ? "var(--s-pos)" : "var(--s-neg)", class: "bar",
+    });
+    rect.addEventListener("mousemove", (e) => tooltip(d.tooltip, e.clientX, e.clientY));
+    rect.addEventListener("mouseleave", hideTooltip);
+    svg.appendChild(rect);
+
+    const nameLabel = svgEl("text", { x: padL - 8, y: cy + 3.5, class: "cat-label", "text-anchor": "end" });
+    nameLabel.textContent = d.label;
+    svg.appendChild(nameLabel);
+
+    const valLabel = svgEl("text", {
+      x: d.value >= 0 ? x2 + 6 : x2 - 6, y: cy + 3.5, class: "value-label",
+      "text-anchor": d.value >= 0 ? "start" : "end",
+    });
+    valLabel.textContent = fmtUSD(d.value);
+    svg.appendChild(valLabel);
+  });
+}
+
+/* ---------------- Grouped bar (two metrics per category) ---------------- */
+function groupedBar(svg, groups, series, opts) {
+  // groups: [label], series: [{key, color, name}], data accessed via opts.get(groupLabel, seriesKey)
+  const W = opts.width, H = opts.height;
+  const padL = 44, padR = 12, padT = 10, padB = 28;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const allVals = [];
+  groups.forEach(g => series.forEach(s => { const v = opts.get(g, s); if (v != null) allVals.push(v); }));
+  const maxV = Math.max(1, ...allVals);
+  const scaleY = (v) => padT + plotH - (Math.max(v, 0) / maxV) * plotH;
+
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padT + plotH - plotH * (i / steps);
+    svg.appendChild(svgEl("line", { x1: padL, x2: W - padR, y1: y, y2: y, class: "gridline" }));
+  }
+  svg.appendChild(svgEl("line", { x1: padL, x2: W - padR, y1: padT + plotH, y2: padT + plotH, class: "baseline" }));
+
+  const n = groups.length;
+  const groupW = plotW / n;
+  const barW = Math.min(30, groupW / (series.length + 1) * 0.8);
+  groups.forEach((g, gi) => {
+    const gx = padL + groupW * (gi + 0.5);
+    const totalW = series.length * barW + (series.length - 1) * 4;
+    let x = gx - totalW / 2;
+    series.forEach((s) => {
+      const v = opts.get(g, s);
+      const y = scaleY(v || 0);
+      const rect = svgEl("rect", { x, y, width: barW, height: (padT + plotH) - y, rx: 3, fill: s.color, class: "bar" });
+      const tt = opts.tooltip ? opts.tooltip(g, s, v) : `<b>${v}</b>`;
+      rect.addEventListener("mousemove", (e) => tooltip(tt, e.clientX, e.clientY));
+      rect.addEventListener("mouseleave", hideTooltip);
+      svg.appendChild(rect);
+      if (v != null) {
+        const lbl = svgEl("text", { x: x + barW / 2, y: y - 5, class: "value-label", "text-anchor": "middle", "font-size": "9.5" });
+        lbl.textContent = opts.format(v);
+        svg.appendChild(lbl);
+      }
+      x += barW + 4;
+    });
+    const cat = svgEl("text", { x: gx, y: H - 8, class: "cat-label", "text-anchor": "middle" });
+    cat.textContent = g;
+    svg.appendChild(cat);
+  });
+}
+
+/* ---------------- Stacked bar (cost structure) ---------------- */
+function stackedBar(svg, groups, segments, opts) {
+  const W = opts.width, H = opts.height;
+  const padL = 44, padR = 140, padT = 10, padB = 28;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const totals = groups.map(g => sum(segments.map(s => opts.get(g, s) || 0)));
+  const maxV = Math.max(1, ...totals);
+  const scaleH = (v) => (v / maxV) * plotH;
+
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.appendChild(svgEl("line", { x1: padL, x2: W - padR, y1: padT + plotH, y2: padT + plotH, class: "baseline" }));
+
+  const n = groups.length;
+  const bw = Math.min(70, plotW / n * 0.5);
+  groups.forEach((g, gi) => {
+    const cx = padL + (plotW / n) * (gi + 0.5);
+    let yCursor = padT + plotH;
+    segments.forEach((s) => {
+      const v = opts.get(g, s) || 0;
+      const h = scaleH(v);
+      const rect = svgEl("rect", { x: cx - bw / 2, y: yCursor - h, width: bw, height: Math.max(0, h - 1.5), fill: s.color, class: "bar" });
+      const tt = `<b>${s.name}</b><br>${g}: <b>${fmtUSDFull(v)}</b>`;
+      rect.addEventListener("mousemove", (e) => tooltip(tt, e.clientX, e.clientY));
+      rect.addEventListener("mouseleave", hideTooltip);
+      svg.appendChild(rect);
+      yCursor -= h;
+    });
+    const cat = svgEl("text", { x: cx, y: H - 8, class: "cat-label", "text-anchor": "middle" });
+    cat.textContent = g;
+    svg.appendChild(cat);
+    const totLabel = svgEl("text", { x: cx, y: yCursor - 6, class: "value-label", "text-anchor": "middle" });
+    totLabel.textContent = fmtUSD(totals[gi]);
+    svg.appendChild(totLabel);
+  });
+
+  // legend on the right
+  segments.forEach((s, i) => {
+    const ly = padT + i * 16;
+    svg.appendChild(svgEl("rect", { x: W - padR + 14, y: ly, width: 9, height: 9, rx: 2, fill: s.color }));
+    const t = svgEl("text", { x: W - padR + 28, y: ly + 8.5, class: "cat-label", "font-size": "10.5" });
+    t.textContent = s.name;
+    svg.appendChild(t);
+  });
+}
+
+/* ---------------- Panel builders ---------------- */
+function panel(title, note, id, wide) {
+  const div = document.createElement("div");
+  div.className = "panel" + (wide ? " wide" : "");
+  div.innerHTML = `<div class="panel-head"><div class="panel-title">${title}</div><div class="panel-note">${note || ""}</div></div><svg class="chart-svg" id="${id}"></svg>`;
+  return div;
+}
+
+function legendRow(items) {
+  const div = document.createElement("div");
+  div.className = "legend";
+  div.innerHTML = items.map(it => `<span class="lg-item"><span class="swatch" style="background:${it.color}"></span>${it.label}</span>`).join("");
+  return div;
+}
+
+function groupBy(rows, key) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = r[key] || "Unclassified";
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(r);
+  });
+  return m;
+}
+
+function renderCharts(rows) {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  const byOwnership = groupBy(rows, "ownership");
+  const byDivision = groupBy(rows, "division");
+
+  /* Panel: Contribution by Ownership Class */
+  const p1 = panel("Unit Contribution by Ownership Class", "avg annualized contribution per active tractor", "chart-contribution");
+  p1.insertBefore(legendRow(OWNERSHIP_ORDER.map(o => ({ color: getComputedColor(OWNERSHIP_COLOR[o]), label: o }))), p1.querySelector("svg"));
+  grid.appendChild(p1);
+
+  const contribData = OWNERSHIP_ORDER
+    .map(o => {
+      const g = byOwnership.get(o) || [];
+      const vals = clean(g, "contribution");
+      return {
+        label: o.replace(" Purchase", "").replace("Owner Operator", "Owner Op"),
+        value: mean(vals) || 0,
+        color: getComputedColor(OWNERSHIP_COLOR[o]),
+        count: g.length,
+        tooltip: `<b>${o}</b><br>${g.length} tractors<br>avg contribution: <b>${fmtUSDFull(mean(vals))}</b>`,
+      };
+    })
+    .filter(d => d.count > 0);
+  verticalBarChart(document.getElementById("chart-contribution"), contribData, { width: 380, height: 220, format: fmtUSD, allowNegative: true });
+
+  /* Panel: Top / bottom contributors */
+  // Zero-revenue tractors are a data gap (LOW-confidence week read $0), not a real
+  // performance signal -- excluded here so they don't drown out genuine underperformers.
+  const zeroRevCount = rows.filter(t => t.revenue === 0).length;
+  const note = `top/bottom of current selection, annualized${zeroRevCount ? ` &middot; ${zeroRevCount} zero-revenue tractor${zeroRevCount === 1 ? "" : "s"} excluded (data gap, see ticker)` : ""}`;
+  const p2 = panel("Best & Worst Tractors by Contribution", note, "chart-topbottom", true);
+  grid.appendChild(p2);
+  const withContrib = rows.filter(t => t.contribution != null && t.revenue > 0).sort((a,b) => b.contribution - a.contribution);
+  const half = Math.min(6, Math.floor(withContrib.length / 2));
+  const top = withContrib.slice(0, half);
+  const bottom = half > 0 ? withContrib.slice(-half).reverse() : [];
+  const tb = [...top, ...bottom].map(t => ({
+    label: t.assetId, value: t.contribution,
+    tooltip: `<b>${t.assetId}</b> &middot; ${t.ownership} &middot; ${t.division}<br>Terminal: ${t.terminal || "—"}<br>Contribution: <b>${fmtUSDFull(t.contribution)}</b><br>Revenue: ${fmtUSDFull(t.revenue)} (${t.revenueConfidence})`,
+  }));
+  diverging(document.getElementById("chart-topbottom"), tb, { width: 900, height: 300 });
+
+  /* Panel: Division split -- two independent-scale mini charts (count vs $
+     never share one axis; see dataviz "one axis" rule) rather than one grouped
+     bar, since tractor counts (~100s) and revenue ($ thousands) at the same
+     scale make the smaller series invisible. */
+  const p3 = panel("Fleet & Revenue by Division", "Chemical vs Waste", null);
+  p3.querySelector("svg").remove();
+  p3.insertBefore(legendRow(DIVISION_ORDER.map(d => ({ color: getComputedColor(DIVISION_COLOR[d]), label: d }))), null);
+  const miniWrap = document.createElement("div");
+  miniWrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
+  miniWrap.innerHTML = `
+    <div><div class="panel-note" style="margin-bottom:4px;">Tractor count</div><svg class="chart-svg" id="chart-division-count"></svg></div>
+    <div><div class="panel-note" style="margin-bottom:4px;">Annualized revenue</div><svg class="chart-svg" id="chart-division-revenue"></svg></div>
+  `;
+  p3.appendChild(miniWrap);
+  grid.appendChild(p3);
+  verticalBarChart(
+    document.getElementById("chart-division-count"),
+    DIVISION_ORDER.map(d => ({ label: d, value: (byDivision.get(d) || []).length, color: getComputedColor(DIVISION_COLOR[d]),
+      tooltip: `<b>${d}</b><br>${(byDivision.get(d) || []).length} tractors` })),
+    { width: 180, height: 200, format: (v) => fmtNum(v) }
+  );
+  verticalBarChart(
+    document.getElementById("chart-division-revenue"),
+    DIVISION_ORDER.map(d => { const g = byDivision.get(d) || []; const rev = sum(clean(g, "revenue"));
+      return { label: d, value: rev, color: getComputedColor(DIVISION_COLOR[d]), tooltip: `<b>${d}</b><br>${fmtUSDFull(rev)}` }; }),
+    { width: 180, height: 200, format: fmtUSD }
+  );
+
+  /* Panel: Fuel efficiency & idle by ownership */
+  const p4 = panel("Fuel Efficiency & Idle Time by Ownership", "Samsara " + DATA.meta.fuelPeriod, "chart-fuel");
+  grid.appendChild(p4);
+  groupedBar(
+    document.getElementById("chart-fuel"),
+    OWNERSHIP_ORDER.map(o => o.replace(" Purchase","").replace("Owner Operator","Owner Op")),
+    [{ key: "mpg", color: "var(--accent)", name: "Avg MPG" }, { key: "idleTimePct", color: "var(--muted)", name: "Idle %" }],
+    {
+      width: 380, height: 220,
+      get: (label, s) => {
+        const full = OWNERSHIP_ORDER.find(o => o.replace(" Purchase","").replace("Owner Operator","Owner Op") === label);
+        const g = byOwnership.get(full) || [];
+        return mean(clean(g, s.key));
+      },
+      format: (v) => v.toFixed(1),
+      tooltip: (label, s, v) => `<b>${label}</b><br>${s.name}: <b>${v != null ? v.toFixed(2) : "—"}</b>`,
+    }
+  );
+  const p4legend = document.createElement("div");
+  p4legend.className = "legend";
+  p4legend.innerHTML = `<span class="lg-item"><span class="swatch" style="background:var(--accent)"></span>Avg MPG</span><span class="lg-item"><span class="swatch" style="background:var(--muted)"></span>Idle time %</span>`;
+  p4.insertBefore(p4legend, p4.querySelector("svg"));
+
+  /* Panel: Cost structure by ownership */
+  const p5 = panel("Direct Cost Structure by Ownership", "stacked annualized cost components, fleet total &middot; LP/OO show $0 fuel, maintenance & insurance by design (RDW doesn't pay those on non-Company units)", "chart-cost", true);
+  grid.appendChild(p5);
+  const costSegments = [
+    { key: "driverSettlement", name: "Driver Settlement", color: "var(--s-lp)" },
+    { key: "fuelCost", name: "Fuel", color: "var(--accent)" },
+    { key: "maintenanceCost", name: "Maintenance (RDW-paid)", color: "var(--s-oo)" },
+    { key: "depreciation", name: "Depreciation", color: "var(--s-chemical)" },
+    { key: "insurance", name: "Insurance & Compliance", color: "var(--muted)" },
+  ];
+  stackedBar(
+    document.getElementById("chart-cost"),
+    OWNERSHIP_ORDER.map(o => o.replace(" Purchase","").replace("Owner Operator","Owner Op")),
+    costSegments,
+    {
+      width: 900, height: 260,
+      get: (label, s) => {
+        const full = OWNERSHIP_ORDER.find(o => o.replace(" Purchase","").replace("Owner Operator","Owner Op") === label);
+        const g = byOwnership.get(full) || [];
+        return sum(clean(g, s.key));
+      },
+    }
+  );
+
+  /* Panel: Deadhead / movement efficiency */
+  const p6 = panel("Deadhead % by Ownership", DATA.meta.movementsPeriod, "chart-deadhead");
+  grid.appendChild(p6);
+  const dhData = OWNERSHIP_ORDER.map(o => {
+    const g = byOwnership.get(o) || [];
+    return { label: o.replace(" Purchase","").replace("Owner Operator","Owner Op"), value: mean(clean(g, "deadheadPct")) || 0, color: getComputedColor(OWNERSHIP_COLOR[o]),
+      tooltip: `<b>${o}</b><br>avg deadhead: <b>${fmtPct(mean(clean(g,"deadheadPct")))}</b>` };
+  });
+  verticalBarChart(document.getElementById("chart-deadhead"), dhData, { width: 380, height: 220, format: (v) => v.toFixed(1) + "%" });
+}
+
+function getComputedColor(varExpr) {
+  const m = varExpr.match(/var\((--[\w-]+)\)/);
+  if (!m) return varExpr;
+  return getComputedStyle(document.body).getPropertyValue(m[1]).trim();
+}
+
+/* ---------------- Filters UI ---------------- */
+function renderFilters() {
+  const divWrap = document.getElementById("filter-division");
+  const ownWrap = document.getElementById("filter-ownership");
+  const termSelect = document.getElementById("filter-terminal");
+
+  function buildPills(wrap, options, key) {
+    wrap.innerHTML = "";
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "pill";
+      btn.textContent = opt;
+      btn.setAttribute("aria-pressed", state[key] === opt ? "true" : "false");
+      btn.addEventListener("click", () => {
+        state[key] = opt;
+        update();
+      });
+      wrap.appendChild(btn);
+    });
+  }
+  buildPills(divWrap, ["All", ...DIVISION_ORDER], "division");
+  buildPills(ownWrap, ["All", ...OWNERSHIP_ORDER], "ownership");
+
+  termSelect.innerHTML = "";
+  ["All", ...terminals()].forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t; opt.textContent = t;
+    if (t === state.terminal) opt.selected = true;
+    termSelect.appendChild(opt);
+  });
+  termSelect.onchange = () => { state.terminal = termSelect.value; update(); };
+
+  document.getElementById("reset-filters").onclick = () => {
+    state.division = "All"; state.ownership = "All"; state.terminal = "All";
+    update();
+  };
+}
+
+function renderQA() {
+  const wrap = document.getElementById("qa-chips");
+  wrap.innerHTML = "";
+  const order = ["PASS", "REVIEW", "FAIL", "SUPERSEDED"];
+  order.forEach(status => {
+    const count = DATA.meta.qaStatus[status];
+    if (!count) return;
+    const chip = document.createElement("span");
+    chip.className = "status-chip";
+    chip.innerHTML = `<span class="status-dot ${status}"></span>${status} &middot; ${count}`;
+    wrap.appendChild(chip);
+  });
+}
+
+function update() {
+  const rows = filtered();
+  document.getElementById("meta-count").textContent = rows.length + " / " + DATA.tractors.length;
+  document.getElementById("meta-fuel-period").textContent = DATA.meta.fuelPeriod;
+  document.getElementById("meta-mv-period").textContent = DATA.meta.movementsPeriod;
+  document.getElementById("filter-count").textContent = rows.length + " of " + DATA.tractors.length + " tractors match";
+  renderTicker(rows);
+  renderCharts(rows);
+  document.querySelectorAll("#filter-division .pill, #filter-ownership .pill").forEach(btn => {
+    const key = btn.parentElement.id.includes("division") ? "division" : "ownership";
+    btn.setAttribute("aria-pressed", state[key] === btn.textContent ? "true" : "false");
+  });
+}
+
+/* =========================================================================
+   ASSET INVENTORY VIEW (all 2,185 assets — tractors, trailers, roll-off boxes)
+   ========================================================================= */
+const ASSET_TYPE_ORDER = ["TRACTOR", "TRAILER", "RBOX"];
+const ASSET_TYPE_LABEL = { TRACTOR: "Tractor", TRAILER: "Trailer", RBOX: "Roll-off Box" };
+const ASSET_TYPE_COLOR = { TRACTOR: "var(--s-company)", TRAILER: "var(--s-lp)", RBOX: "var(--s-oo)" };
+
+const assetState = { assetType: "All", ownership: "All", terminal: "All", search: "", sortKey: "assetId", sortDir: 1 };
+
+function assetTerminals() {
+  const set = new Set(ASSET_DATA.assets.map(a => a.terminal).filter(Boolean));
+  return Array.from(set).sort();
+}
+
+function filteredAssets() {
+  const q = assetState.search.trim().toLowerCase();
+  return ASSET_DATA.assets.filter(a => {
+    if (assetState.assetType !== "All" && a.assetType !== assetState.assetType) return false;
+    if (assetState.ownership !== "All" && a.ownership !== assetState.ownership) return false;
+    if (assetState.terminal !== "All" && a.terminal !== assetState.terminal) return false;
+    if (q) {
+      const hay = `${a.assetId} ${a.make || ""} ${a.model || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderAssetTicker(rows) {
+  const byType = groupBy(rows, "assetType");
+  const owned = rows.filter(a => a.rdwOwned === "Yes").length;
+  const ages = clean(rows, "age");
+  const nbv = sum(clean(rows, "netBookValue"));
+  const ambiguous = rows.filter(a => a.ambiguousId).length;
+
+  const tiles = [
+    { label: "Total assets", value: fmtNum(rows.length), sub: rows.length ? Math.round(rows.length / ASSET_DATA.assets.length * 100) + "% of register" : "" },
+    { label: "Tractors", value: fmtNum((byType.get("TRACTOR")||[]).length), sub: "" },
+    { label: "Trailers", value: fmtNum((byType.get("TRAILER")||[]).length), sub: "" },
+    { label: "Roll-off boxes", value: fmtNum((byType.get("RBOX")||[]).length), sub: "" },
+    { label: "RDW-owned", value: rows.length ? fmtPct(owned / rows.length * 100) : "—", sub: fmtNum(owned) + " of " + fmtNum(rows.length) },
+    { label: "Avg fleet age", value: ages.length ? mean(ages).toFixed(1) + " yrs" : "—", sub: "from in-service date" },
+    { label: "Net book value", value: fmtUSD(nbv), sub: "tractors only — trailers/RBOX not costed", cls: "accent" },
+  ];
+  if (ambiguous > 0) {
+    tiles.push({ label: "Dual-registry IDs", value: fmtNum(ambiguous), sub: "same # used by two assets — see QA_Exceptions", cls: "warn" });
+  }
+
+  const el = document.getElementById("asset-ticker");
+  el.innerHTML = "";
+  tiles.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "tile" + (t.cls ? " " + t.cls : "");
+    div.innerHTML = `<div class="label">${t.label}</div><div class="value mono">${t.value}</div><div class="sub">${t.sub}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderAssetCharts(rows) {
+  const grid = document.getElementById("asset-grid");
+  grid.innerHTML = "";
+  const byType = groupBy(rows, "assetType");
+  const byOwnership = groupBy(rows, "ownership");
+
+  const p1 = panel("Assets by Type", "tractors, trailers, roll-off boxes", "chart-asset-type");
+  grid.appendChild(p1);
+  verticalBarChart(
+    document.getElementById("chart-asset-type"),
+    ASSET_TYPE_ORDER.map(t => ({ label: ASSET_TYPE_LABEL[t], value: (byType.get(t)||[]).length, color: getComputedColor(ASSET_TYPE_COLOR[t]),
+      tooltip: `<b>${ASSET_TYPE_LABEL[t]}</b><br>${(byType.get(t)||[]).length} units` })),
+    { width: 380, height: 220, format: fmtNum }
+  );
+
+  const p2 = panel("Ownership Class (Tractors)", "trailers/RBOX aren't classified by ownership class", "chart-asset-ownership");
+  grid.appendChild(p2);
+  verticalBarChart(
+    document.getElementById("chart-asset-ownership"),
+    OWNERSHIP_ORDER.map(o => ({ label: o.replace(" Purchase","").replace("Owner Operator","Owner Op"), value: (byOwnership.get(o)||[]).length, color: getComputedColor(OWNERSHIP_COLOR[o]),
+      tooltip: `<b>${o}</b><br>${(byOwnership.get(o)||[]).length} tractors` })),
+    { width: 380, height: 220, format: fmtNum }
+  );
+
+  const p3 = panel("Fleet Age by Type", "years since in-service date, avg per type", "chart-asset-age");
+  grid.appendChild(p3);
+  verticalBarChart(
+    document.getElementById("chart-asset-age"),
+    ASSET_TYPE_ORDER.map(t => { const g = byType.get(t) || []; const ages = clean(g, "age"); return { label: ASSET_TYPE_LABEL[t], value: mean(ages) || 0, color: getComputedColor(ASSET_TYPE_COLOR[t]),
+      tooltip: `<b>${ASSET_TYPE_LABEL[t]}</b><br>avg age: <b>${ages.length ? mean(ages).toFixed(1) : "—"} yrs</b> (${ages.length} dated)` }; }),
+    { width: 380, height: 220, format: (v) => v.toFixed(1) + " yrs" }
+  );
+
+  const p4 = panel("RDW-Owned vs Not, by Type", "financing status", "chart-asset-owned", true);
+  grid.appendChild(p4);
+  groupedBar(
+    document.getElementById("chart-asset-owned"),
+    ASSET_TYPE_ORDER.map(t => ASSET_TYPE_LABEL[t]),
+    [{ key: "Yes", color: "var(--good)", name: "RDW-owned" }, { key: "No", color: "var(--critical)", name: "Not RDW-owned" }, { key: "UNKNOWN", color: "var(--muted)", name: "Unknown" }],
+    {
+      width: 900, height: 240,
+      get: (label, s) => {
+        const type = ASSET_TYPE_ORDER.find(t => ASSET_TYPE_LABEL[t] === label);
+        const g = byType.get(type) || [];
+        return g.filter(a => (a.rdwOwned || "UNKNOWN") === s.key).length;
+      },
+      format: fmtNum,
+      tooltip: (label, s, v) => `<b>${label}</b><br>${s.name}: <b>${v}</b>`,
+    }
+  );
+  const p4legend = legendRow([
+    { color: getComputedColor("var(--good)"), label: "RDW-owned" },
+    { color: getComputedColor("var(--critical)"), label: "Not RDW-owned" },
+    { color: getComputedColor("var(--muted)"), label: "Unknown" },
+  ]);
+  p4.insertBefore(p4legend, p4.querySelector("svg"));
+}
+
+function renderAssetTable(rows) {
+  const sorted = [...rows].sort((a, b) => {
+    let av = a[assetState.sortKey], bv = b[assetState.sortKey];
+    if (av == null) av = assetState.sortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = assetState.sortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === "string") return av.localeCompare(bv) * assetState.sortDir;
+    return (av - bv) * assetState.sortDir;
+  });
+  const LIMIT = 200;
+  const shown = sorted.slice(0, LIMIT);
+  const tbody = document.getElementById("asset-table-body");
+  tbody.innerHTML = shown.map(a => `
+    <tr>
+      <td class="mono">${a.assetId}</td>
+      <td><span class="type-chip">${ASSET_TYPE_LABEL[a.assetType] || a.assetType}</span></td>
+      <td>${a.ownership || "—"}</td>
+      <td>${a.division || "—"}</td>
+      <td>${a.terminal || "—"}</td>
+      <td class="num">${a.year || "—"}</td>
+      <td>${[a.make, a.model].filter(Boolean).join(" ") || "—"}</td>
+      <td class="num">${a.age != null ? a.age + " yrs" : "—"}</td>
+      <td class="num">${a.netBookValue != null ? fmtUSDFull(a.netBookValue) : "—"}</td>
+    </tr>
+  `).join("");
+  document.getElementById("asset-table-note").textContent =
+    rows.length > LIMIT ? `showing ${LIMIT} of ${rows.length} matching assets — narrow with filters or search` : `${rows.length} matching assets`;
+}
+
+function renderAssetFilters() {
+  const typeWrap = document.getElementById("filter-assettype");
+  const ownWrap = document.getElementById("filter-assetownership");
+  const termSelect = document.getElementById("filter-assetterminal");
+
+  function buildPills(wrap, options, labels, key) {
+    wrap.innerHTML = "";
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "pill";
+      btn.textContent = labels ? (labels[opt] || opt) : opt;
+      btn.dataset.value = opt;
+      btn.setAttribute("aria-pressed", assetState[key] === opt ? "true" : "false");
+      btn.addEventListener("click", () => { assetState[key] = opt; updateAssets(); });
+      wrap.appendChild(btn);
+    });
+  }
+  buildPills(typeWrap, ["All", ...ASSET_TYPE_ORDER], { All: "All", ...ASSET_TYPE_LABEL }, "assetType");
+  buildPills(ownWrap, ["All", ...OWNERSHIP_ORDER], null, "ownership");
+
+  termSelect.innerHTML = "";
+  ["All", ...assetTerminals()].forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t; opt.textContent = t;
+    if (t === assetState.terminal) opt.selected = true;
+    termSelect.appendChild(opt);
+  });
+  termSelect.onchange = () => { assetState.terminal = termSelect.value; updateAssets(); };
+
+  document.getElementById("asset-search").oninput = (e) => { assetState.search = e.target.value; updateAssets(); };
+  document.getElementById("reset-asset-filters").onclick = () => {
+    assetState.assetType = "All"; assetState.ownership = "All"; assetState.terminal = "All"; assetState.search = "";
+    document.getElementById("asset-search").value = "";
+    updateAssets();
+  };
+
+  document.querySelectorAll("#asset-table th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      if (assetState.sortKey === key) { assetState.sortDir *= -1; } else { assetState.sortKey = key; assetState.sortDir = 1; }
+      document.querySelectorAll("#asset-table th").forEach(h => h.classList.remove("sorted"));
+      th.classList.add("sorted");
+      renderAssetTable(filteredAssets());
+    });
+  });
+}
+
+function updateAssets() {
+  const rows = filteredAssets();
+  document.getElementById("asset-filter-count").textContent = rows.length + " of " + ASSET_DATA.assets.length + " assets match";
+  renderAssetTicker(rows);
+  renderAssetCharts(rows);
+  renderAssetTable(rows);
+  document.querySelectorAll("#filter-assettype .pill, #filter-assetownership .pill").forEach(btn => {
+    const key = btn.parentElement.id.includes("assettype") ? "assetType" : "ownership";
+    btn.setAttribute("aria-pressed", assetState[key] === btn.dataset.value ? "true" : "false");
+  });
+}
+
+/* =========================================================================
+   MAINTENANCE & COST-PER-MILE VIEW
+   ========================================================================= */
+function median(arr) {
+  if (!arr.length) return null;
+  const s = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+// A tractor's "Annualized Distance" is itself an extrapolation (same family of
+// weakness as the one-week revenue figure) -- below this floor the ratio blows
+// up (a handful of tractors show <1 annualized mile), so those are excluded
+// from cost-per-mile rather than reported as a $900/mile number.
+const MIN_ANNUAL_MILES = 10000;
+function costPerMile(t) {
+  if (t.totalDirectCost == null || t.annualizedDistance == null || t.annualizedDistance < MIN_ANNUAL_MILES) {
+    return { total: null, loaded: null, excluded: true };
+  }
+  const total = t.totalDirectCost / t.annualizedDistance;
+  let loaded = null;
+  if (t.deadheadPct != null) {
+    const loadedMilesEst = t.annualizedDistance * (1 - t.deadheadPct / 100);
+    if (loadedMilesEst > 0) loaded = t.totalDirectCost / loadedMilesEst;
+  }
+  return { total, loaded, excluded: false };
+}
+
+const maintState = { division: "All", ownership: "All", terminal: "All", search: "" };
+
+function filteredMaintTractors() {
+  return DATA.tractors.filter(t => {
+    if (maintState.division !== "All" && t.division !== maintState.division) return false;
+    if (maintState.ownership !== "All" && t.ownership !== maintState.ownership) return false;
+    if (maintState.terminal !== "All" && t.terminal !== maintState.terminal) return false;
+    return true;
+  });
+}
+
+function filteredWorkOrders(tractorRows) {
+  const idSet = new Set(tractorRows.map(t => t.assetId));
+  const q = maintState.search.trim().toLowerCase();
+  return MAINT_DATA.workOrders.filter(w => {
+    if (!idSet.has(w.assetId)) return false;
+    if (q && !`${w.assetId} ${w.workOrderKey}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function filteredPmDue(tractorRows) {
+  const idSet = new Set(tractorRows.map(t => t.assetId));
+  const q = maintState.search.trim().toLowerCase();
+  return (MAINT_DATA.pmDue || []).filter(p => {
+    if (!idSet.has(p.assetId)) return false;
+    if (q && !`${p.assetId} ${p.pmDescription}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+const PM_STATUS_COLOR = { "Past Due": "var(--critical)", "Due Now": "var(--critical)", "Due Soon": "var(--warning)", "Not Due": "var(--good)" };
+
+function renderMaintTicker(tractorRows, woRows, pmDueRows) {
+  const withCPM = tractorRows.map(t => ({ t, cpm: costPerMile(t) }));
+  const excluded = withCPM.filter(x => x.cpm.excluded).length;
+  const totalMiles = withCPM.map(x => x.cpm.total).filter(v => v != null);
+  const loadedMiles = withCPM.map(x => x.cpm.loaded).filter(v => v != null);
+  const totalCost = sum(clean(woRows, "totalCost"));
+  const tractorsWithWO = new Set(woRows.map(w => w.assetId)).size;
+  const pmPastDue = pmDueRows.filter(p => p.dueStatus === "Past Due").length;
+  const pmAssets = new Set(pmDueRows.map(p => p.assetId)).size;
+
+  const tiles = [
+    { label: "Work orders", value: fmtNum(woRows.length), sub: MAINT_DATA.meta.dateRange.join(" to ") },
+    { label: "Total WO cost", value: fmtUSD(totalCost), sub: "period total, not annualized" },
+    { label: "Median $/total mile", value: totalMiles.length ? "$" + median(totalMiles).toFixed(2) : "—", sub: "total direct cost basis", cls: "accent" },
+    { label: "Median $/loaded mile", value: loadedMiles.length ? "$" + median(loadedMiles).toFixed(2) : "—", sub: "loaded miles only" },
+    { label: "PMs past due", value: fmtNum(pmPastDue), sub: pmDueRows.length ? fmtPct(pmPastDue / pmDueRows.length * 100) + " of " + fmtNum(pmDueRows.length) + " PM items" : "", cls: pmPastDue > 0 ? "crit" : "" },
+    { label: "Tractors with a past-due PM", value: fmtNum(pmAssets), sub: tractorRows.length ? fmtPct(pmAssets / tractorRows.length * 100) + " of selection" : "" },
+    { label: "Excluded from $/mile (low mileage)", value: fmtNum(excluded), sub: "annualized distance < " + fmtNum(MIN_ANNUAL_MILES) + " mi", cls: excluded > 0 ? "warn" : "" },
+  ];
+  const el = document.getElementById("maint-ticker");
+  el.innerHTML = "";
+  tiles.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "tile" + (t.cls ? " " + t.cls : "");
+    div.innerHTML = `<div class="label">${t.label}</div><div class="value mono">${t.value}</div><div class="sub">${t.sub}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderMaintCharts(tractorRows, woRows) {
+  const grid = document.getElementById("maint-grid");
+  grid.innerHTML = "";
+  const byOwnership = groupBy(tractorRows, "ownership");
+
+  /* Cost per mile by ownership -- total vs loaded, same $/mi scale so one axis is safe */
+  const p1 = panel("Cost per Mile by Ownership", "total direct cost ÷ annualized distance", "chart-cpm", true);
+  grid.appendChild(p1);
+  groupedBar(
+    document.getElementById("chart-cpm"),
+    OWNERSHIP_ORDER.map(o => o.replace(" Purchase", "").replace("Owner Operator", "Owner Op")),
+    [{ key: "total", color: "var(--accent)", name: "$ / total mile" }, { key: "loaded", color: "var(--s-lp)", name: "$ / loaded mile" }],
+    {
+      width: 900, height: 240,
+      get: (label, s) => {
+        const full = OWNERSHIP_ORDER.find(o => o.replace(" Purchase", "").replace("Owner Operator", "Owner Op") === label);
+        const g = byOwnership.get(full) || [];
+        const vals = g.map(t => costPerMile(t)[s.key]).filter(v => v != null);
+        return vals.length ? median(vals) : null;
+      },
+      format: (v) => "$" + v.toFixed(2),
+      tooltip: (label, s, v) => `<b>${label}</b><br>${s.name} (median): <b>${v != null ? "$" + v.toFixed(2) : "—"}</b>`,
+    }
+  );
+  const p1legend = legendRow([
+    { color: getComputedColor("var(--accent)"), label: "$ / total mile" },
+    { color: getComputedColor("var(--s-lp)"), label: "$ / loaded mile" },
+  ]);
+  p1.insertBefore(p1legend, p1.querySelector("svg"));
+
+  /* Top 10 tractors by maintenance WO cost */
+  const costByTractor = new Map();
+  woRows.forEach(w => costByTractor.set(w.assetId, (costByTractor.get(w.assetId) || 0) + (w.totalCost || 0)));
+  const top10 = Array.from(costByTractor.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const p2 = panel("Top 10 Tractors by Maintenance Cost", MAINT_DATA.meta.dateRange.join(" to ") + ", RTA-reported", "chart-top-maint", true);
+  grid.appendChild(p2);
+  verticalBarChart(
+    document.getElementById("chart-top-maint"),
+    top10.map(([id, cost]) => ({ label: id, value: cost, color: getComputedColor("var(--s-oo)"), tooltip: `<b>${id}</b><br>${fmtUSDFull(cost)}` })),
+    { width: 900, height: 220, format: fmtUSD }
+  );
+
+  /* Monthly WO cost trend */
+  const byMonth = new Map();
+  woRows.forEach(w => {
+    if (!w.openedDate) return;
+    const m = String(w.openedDate).slice(0, 7);
+    byMonth.set(m, (byMonth.get(m) || 0) + (w.totalCost || 0));
+  });
+  const months = Array.from(byMonth.keys()).sort();
+  const p3 = panel("Maintenance Cost by Month", "work orders opened, current selection", "chart-maint-month");
+  grid.appendChild(p3);
+  verticalBarChart(
+    document.getElementById("chart-maint-month"),
+    months.map(m => ({ label: m.slice(5), value: byMonth.get(m), color: getComputedColor("var(--accent)"), tooltip: `<b>${m}</b><br>${fmtUSDFull(byMonth.get(m))}` })),
+    { width: 380, height: 220, format: fmtUSD }
+  );
+
+  /* WO status: open vs closed, date-integrity flag */
+  const openCount = woRows.filter(w => w.isOpen === "TRUE" || w.isOpen === true).length;
+  const flagged = woRows.filter(w => w.dateIntegrityFlag && w.dateIntegrityFlag !== "OK").length;
+  const p4 = panel("Work Order Status", "current selection", "chart-wo-status");
+  grid.appendChild(p4);
+  verticalBarChart(
+    document.getElementById("chart-wo-status"),
+    [
+      { label: "Closed", value: woRows.length - openCount, color: getComputedColor("var(--good)") },
+      { label: "Open", value: openCount, color: getComputedColor("var(--warning)") },
+      { label: "Date flag", value: flagged, color: getComputedColor("var(--critical)"), tooltip: `<b>Date integrity flag</b><br>${flagged} work orders &mdash; closed before opened or similar. Don't build cycle-time measures on these.` },
+    ],
+    { width: 380, height: 220, format: fmtNum }
+  );
+}
+
+function renderWOTable(woRows) {
+  const LIMIT = 200;
+  const sorted = [...woRows].sort((a, b) => (a.openedDate < b.openedDate ? 1 : -1));
+  const shown = sorted.slice(0, LIMIT);
+  const tbody = document.getElementById("wo-table-body");
+  tbody.innerHTML = shown.map(w => `
+    <tr>
+      <td class="mono">${w.assetId}</td>
+      <td class="mono">${w.workOrderKey}</td>
+      <td>${w.openedDate || "—"}</td>
+      <td>${w.closedDate || "—"}</td>
+      <td class="num">${w.parts != null ? fmtUSDFull(w.parts) : "—"}</td>
+      <td class="num">${w.tires != null ? fmtUSDFull(w.tires) : "—"}</td>
+      <td class="num">${w.labor != null ? fmtUSDFull(w.labor) : "—"}</td>
+      <td class="num">${w.outside != null ? fmtUSDFull(w.outside) : "—"}</td>
+      <td class="num">${w.totalCost != null ? fmtUSDFull(w.totalCost) : "—"}</td>
+      <td>${w.isOpen === "TRUE" || w.isOpen === true ? '<span class="type-chip" style="border-color:var(--warning);color:var(--warning);">Open</span>' : '<span class="type-chip">Closed</span>'}</td>
+    </tr>
+  `).join("");
+  document.getElementById("wo-table-note").textContent =
+    woRows.length > LIMIT ? `showing ${LIMIT} most recent of ${woRows.length} work orders — narrow with filters or search` : `${woRows.length} work orders`;
+}
+
+function renderPmDueTable(pmDueRows) {
+  const LIMIT = 200;
+  // Past Due first (most overdue first, dueIn is negative -> most negative = most overdue),
+  // then Due Now/Due Soon, then Not Due.
+  const statusRank = { "Past Due": 0, "Due Now": 1, "Due Soon": 2, "Not Due": 3 };
+  const sorted = [...pmDueRows].sort((a, b) => {
+    const r = (statusRank[a.dueStatus] ?? 9) - (statusRank[b.dueStatus] ?? 9);
+    if (r !== 0) return r;
+    return (a.dueIn ?? 0) - (b.dueIn ?? 0);
+  });
+  const shown = sorted.slice(0, LIMIT);
+  const nBaselineUnset = pmDueRows.filter(p => p.cycleType === "Miles" && p.previousDone === "0").length;
+  const tbody = document.getElementById("pm-due-table-body");
+  tbody.innerHTML = shown.map(p => {
+    const color = getComputedColor(PM_STATUS_COLOR[p.dueStatus] || "var(--muted)");
+    const baselineUnset = p.cycleType === "Miles" && p.previousDone === "0";
+    const dueInLabel = p.dueIn != null ? p.dueIn.toLocaleString() + (p.dueUnit === "miles" ? " mi" : " days") : "—";
+    return `
+    <tr${baselineUnset ? ' title="No prior mileage-based PM logged in RTA (Previous Done = 0) — this figure measures miles since tracking started at zero, not miles since last service. Verify before acting."' : ""}>
+      <td class="mono">${p.assetId}</td>
+      <td>${p.pmDescription || "—"}</td>
+      <td>${p.cycleType || "—"}</td>
+      <td class="num">${p.interval != null ? p.interval + (p.cycleType === "Miles" ? " mi" : " days") : "—"}</td>
+      <td>${p.dueAt || "—"}</td>
+      <td class="num">${dueInLabel}${baselineUnset ? ' <span style="color:var(--warning);" title="Baseline not set in RTA">&#9888;</span>' : ""}</td>
+      <td><span class="type-chip" style="border-color:${color}; color:${color};">${p.dueStatus}</span></td>
+      <td>${p.scheduled || "—"}</td>
+    </tr>
+  `;
+  }).join("");
+  document.getElementById("pm-due-table-note").textContent =
+    (pmDueRows.length > LIMIT ? `showing ${LIMIT} most urgent of ${pmDueRows.length} PM items — narrow with filters or search. ` : `${pmDueRows.length} PM items. `)
+    + (nBaselineUnset ? `${nBaselineUnset} marked ⚠ have no prior mileage-based PM logged in RTA (Previous Done = 0) — their "Due In" measures since tracking started at zero, not since last service.` : "");
+  document.getElementById("pm-due-source-note").textContent = MAINT_DATA.meta.pmDueSource || "";
+}
+
+function renderMaintFilters() {
+  const divWrap = document.getElementById("filter-maintdivision");
+  const ownWrap = document.getElementById("filter-maintownership");
+  const termSelect = document.getElementById("filter-maintterminal");
+
+  function buildPills(wrap, options, key) {
+    wrap.innerHTML = "";
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "pill";
+      btn.textContent = opt;
+      btn.setAttribute("aria-pressed", maintState[key] === opt ? "true" : "false");
+      btn.addEventListener("click", () => { maintState[key] = opt; updateMaint(); });
+      wrap.appendChild(btn);
+    });
+  }
+  buildPills(divWrap, ["All", ...DIVISION_ORDER], "division");
+  buildPills(ownWrap, ["All", ...OWNERSHIP_ORDER], "ownership");
+
+  termSelect.innerHTML = "";
+  ["All", ...terminals()].forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t; opt.textContent = t;
+    if (t === maintState.terminal) opt.selected = true;
+    termSelect.appendChild(opt);
+  });
+  termSelect.onchange = () => { maintState.terminal = termSelect.value; updateMaint(); };
+
+  document.getElementById("wo-search").oninput = (e) => { maintState.search = e.target.value; updateMaint(); };
+  document.getElementById("reset-maint-filters").onclick = () => {
+    maintState.division = "All"; maintState.ownership = "All"; maintState.terminal = "All"; maintState.search = "";
+    document.getElementById("wo-search").value = "";
+    updateMaint();
+  };
+}
+
+function updateMaint() {
+  const tractorRows = filteredMaintTractors();
+  const woRows = filteredWorkOrders(tractorRows);
+  const pmDueRows = filteredPmDue(tractorRows);
+  document.getElementById("maint-filter-count").textContent = tractorRows.length + " of " + DATA.tractors.length + " tractors match";
+  renderMaintTicker(tractorRows, woRows, pmDueRows);
+  renderMaintCharts(tractorRows, woRows);
+  renderWOTable(woRows);
+  renderPmDueTable(pmDueRows);
+  document.querySelectorAll("#filter-maintdivision .pill, #filter-maintownership .pill").forEach(btn => {
+    const key = btn.parentElement.id.includes("division") ? "division" : "ownership";
+    btn.setAttribute("aria-pressed", maintState[key] === btn.textContent ? "true" : "false");
+  });
+}
+
+/* =========================================================================
+   INSURED VALUE & LEASE VIEW -- Transafe PD schedule + vendor lease invoices
+   (recovered from the prior published dashboard build)
+   ========================================================================= */
+const LEASE_COVERAGE = ["All", "Insured", "Leased-in"];
+const leaseState = { assetType: "All", coverage: "All", lessor: "All", search: "", sortKey: "insuredValue", sortDir: -1 };
+
+function leaseLessors() {
+  const set = new Set(LEASE_DATA.units.map(u => u.lessor).filter(Boolean));
+  return Array.from(set).sort();
+}
+
+function filteredLease() {
+  const q = leaseState.search.trim().toLowerCase();
+  return LEASE_DATA.units.filter(u => {
+    if (leaseState.assetType !== "All" && u.assetType !== leaseState.assetType) return false;
+    if (leaseState.coverage === "Insured" && u.insuredValue == null) return false;
+    if (leaseState.coverage === "Leased-in" && u.monthlyLeaseRate == null) return false;
+    if (leaseState.lessor !== "All" && u.lessor !== leaseState.lessor) return false;
+    if (q) {
+      const hay = (u.assetId + " " + (u.make || "") + " " + (u.model || "") + " " + (u.owner || "")).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function renderLeaseTicker(rows) {
+  const insured = rows.filter(u => u.insuredValue != null);
+  const leased = rows.filter(u => u.monthlyLeaseRate != null);
+  const insuredSum = sum(clean(insured, "insuredValue"));
+  const leasedSum = sum(clean(leased, "monthlyLeaseRate"));
+  const tractors = rows.filter(u => u.assetType === "TRACTOR");
+  const trailers = rows.filter(u => u.assetType === "TRAILER");
+
+  const tiles = [
+    { label: "Units in view", value: fmtNum(rows.length), sub: rows.length ? Math.round(rows.length / LEASE_DATA.meta.unitCount * 100) + "% of register" : "" },
+    { label: "Tractors / Trailers", value: fmtNum(tractors.length) + " / " + fmtNum(trailers.length), sub: "" },
+    { label: "On PD schedule", value: fmtNum(insured.length), sub: rows.length ? fmtPct(insured.length / rows.length * 100) + " of view" : "", cls: "accent" },
+    { label: "Total insured value", value: fmtUSD(insuredSum), sub: "Transafe, $50K+ tracked", cls: "accent" },
+    { label: "Leased-in units", value: fmtNum(leased.length), sub: leased.length ? Object.keys(LEASE_DATA.meta.lessorCounts).length + " vendors" : "" },
+    { label: "Monthly lease cost", value: fmtUSD(leasedSum), sub: leasedSum ? fmtUSD(leasedSum * 12) + "/yr" : "", cls: leasedSum > 0 ? "warn" : "" },
+  ];
+
+  const el = document.getElementById("lease-ticker");
+  el.innerHTML = "";
+  tiles.forEach(t => {
+    const div = document.createElement("div");
+    div.className = "tile" + (t.cls ? " " + t.cls : "");
+    div.innerHTML = `<div class="label">${t.label}</div><div class="value mono">${t.value}</div><div class="sub">${t.sub}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderLeaseCharts(rows) {
+  const grid = document.getElementById("lease-grid");
+  grid.innerHTML = "";
+  const byType = groupBy(rows, "assetType");
+
+  const p1 = panel("Insured Value Coverage by Type", "units on Transafe PD schedule out of total in view", "chart-lease-coverage");
+  grid.appendChild(p1);
+  verticalBarChart(
+    document.getElementById("chart-lease-coverage"),
+    ASSET_TYPE_ORDER.filter(t => t !== "RBOX").map(t => {
+      const g = byType.get(t) || [];
+      const ins = g.filter(u => u.insuredValue != null).length;
+      return { label: ASSET_TYPE_LABEL[t], value: ins, color: getComputedColor(ASSET_TYPE_COLOR[t]),
+        tooltip: `<b>${ASSET_TYPE_LABEL[t]}</b><br>${ins} of ${g.length} insured` };
+    }),
+    { width: 380, height: 220, format: fmtNum }
+  );
+
+  const p2 = panel("Total Insured Value by Type", "sum of Transafe declared values", "chart-lease-value");
+  grid.appendChild(p2);
+  verticalBarChart(
+    document.getElementById("chart-lease-value"),
+    ASSET_TYPE_ORDER.filter(t => t !== "RBOX").map(t => {
+      const g = byType.get(t) || [];
+      const v = sum(clean(g, "insuredValue"));
+      return { label: ASSET_TYPE_LABEL[t], value: v, color: getComputedColor(ASSET_TYPE_COLOR[t]),
+        tooltip: `<b>${ASSET_TYPE_LABEL[t]}</b><br>${fmtUSDFull(v)}` };
+    }),
+    { width: 380, height: 220, format: fmtUSD }
+  );
+
+  const p3 = panel("Highest-Insured Units", "top 8 in current view, by declared value", "chart-lease-top", true);
+  grid.appendChild(p3);
+  const topInsured = rows.filter(u => u.insuredValue != null).sort((a, b) => b.insuredValue - a.insuredValue).slice(0, 8)
+    .map(u => ({ label: u.assetId, value: u.insuredValue,
+      tooltip: `<b>${u.assetId}</b> &middot; ${ASSET_TYPE_LABEL[u.assetType]}<br>${[u.year, u.make, u.model].filter(Boolean).join(" ")}<br>Owner: ${u.owner || "—"}<br>Insured: <b>${fmtUSDFull(u.insuredValue)}</b>` }));
+  diverging(document.getElementById("chart-lease-top"), topInsured, { width: 900, height: 260 });
+
+  const p4 = panel("Monthly Lease Cost by Vendor", "leased-in equipment only, current view", "chart-lease-vendor", true);
+  grid.appendChild(p4);
+  const byLessor = groupBy(rows.filter(u => u.lessor), "lessor");
+  const lessorNames = Array.from(byLessor.keys()).sort((a, b) => sum(clean(byLessor.get(b), "monthlyLeaseRate")) - sum(clean(byLessor.get(a), "monthlyLeaseRate")));
+  verticalBarChart(
+    document.getElementById("chart-lease-vendor"),
+    lessorNames.map(name => { const g = byLessor.get(name) || []; const v = sum(clean(g, "monthlyLeaseRate"));
+      return { label: name.replace(" LLC", "").replace(" Leasing", "").replace(" System", ""), value: v, color: getComputedColor("var(--s-lp)"),
+        tooltip: `<b>${name}</b><br>${g.length} units<br>${fmtUSDFull(v)}/mo` }; }),
+    { width: 900, height: 240, format: fmtUSD }
+  );
+}
+
+function renderLeaseTable(rows) {
+  const sorted = [...rows].sort((a, b) => {
+    let av = a[leaseState.sortKey], bv = b[leaseState.sortKey];
+    if (av == null) av = leaseState.sortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = leaseState.sortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === "string") return av.localeCompare(bv) * leaseState.sortDir;
+    return (av - bv) * leaseState.sortDir;
+  });
+  const LIMIT = 200;
+  const shown = sorted.slice(0, LIMIT);
+  const tbody = document.getElementById("lease-table-body");
+  tbody.innerHTML = shown.map(u => `
+    <tr>
+      <td class="mono">${u.assetId}</td>
+      <td><span class="type-chip">${ASSET_TYPE_LABEL[u.assetType] || u.assetType}</span></td>
+      <td class="num">${u.year || "—"}</td>
+      <td>${[u.make, u.model].filter(Boolean).join(" ") || "—"}</td>
+      <td>${u.owner || "—"}</td>
+      <td>${u.status || "—"}</td>
+      <td class="num">${u.insuredValue != null ? fmtUSDFull(u.insuredValue) : "—"}</td>
+      <td class="num">${u.monthlyLeaseRate != null ? fmtUSDFull(u.monthlyLeaseRate) : "—"}</td>
+      <td>${u.lessor || "—"}</td>
+    </tr>
+  `).join("");
+  document.getElementById("lease-table-note").textContent =
+    rows.length > LIMIT ? `showing ${LIMIT} of ${rows.length} matching units — narrow with filters or search` : `${rows.length} matching units`;
+}
+
+function renderLeaseFilters() {
+  const typeWrap = document.getElementById("filter-leasetype");
+  const covWrap = document.getElementById("filter-leasecoverage");
+  const lessorSelect = document.getElementById("filter-leaselessor");
+
+  function buildPills(wrap, options, labels, key) {
+    wrap.innerHTML = "";
+    options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "pill";
+      btn.textContent = labels ? (labels[opt] || opt) : opt;
+      btn.dataset.value = opt;
+      btn.setAttribute("aria-pressed", leaseState[key] === opt ? "true" : "false");
+      btn.addEventListener("click", () => { leaseState[key] = opt; updateLease(); });
+      wrap.appendChild(btn);
+    });
+  }
+  buildPills(typeWrap, ["All", "TRACTOR", "TRAILER"], { All: "All", TRACTOR: "Tractor", TRAILER: "Trailer" }, "assetType");
+  buildPills(covWrap, LEASE_COVERAGE, null, "coverage");
+
+  lessorSelect.innerHTML = "";
+  ["All", ...leaseLessors()].forEach(l => {
+    const opt = document.createElement("option");
+    opt.value = l; opt.textContent = l;
+    if (l === leaseState.lessor) opt.selected = true;
+    lessorSelect.appendChild(opt);
+  });
+  lessorSelect.onchange = () => { leaseState.lessor = lessorSelect.value; updateLease(); };
+
+  document.getElementById("lease-search").oninput = (e) => { leaseState.search = e.target.value; updateLease(); };
+  document.getElementById("reset-lease-filters").onclick = () => {
+    leaseState.assetType = "All"; leaseState.coverage = "All"; leaseState.lessor = "All"; leaseState.search = "";
+    document.getElementById("lease-search").value = "";
+    updateLease();
+  };
+
+  document.querySelectorAll("#lease-table th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      if (leaseState.sortKey === key) { leaseState.sortDir *= -1; } else { leaseState.sortKey = key; leaseState.sortDir = key === "assetId" ? 1 : -1; }
+      document.querySelectorAll("#lease-table th").forEach(h => h.classList.remove("sorted"));
+      th.classList.add("sorted");
+      renderLeaseTable(filteredLease());
+    });
+  });
+}
+
+function updateLease() {
+  const rows = filteredLease();
+  document.getElementById("lease-filter-count").textContent = rows.length + " of " + LEASE_DATA.meta.unitCount + " units match";
+  renderLeaseTicker(rows);
+  renderLeaseCharts(rows);
+  renderLeaseTable(rows);
+  document.querySelectorAll("#filter-leasetype .pill, #filter-leasecoverage .pill").forEach(btn => {
+    const key = btn.parentElement.id.includes("leasetype") ? "assetType" : "coverage";
+    btn.setAttribute("aria-pressed", leaseState[key] === btn.dataset.value ? "true" : "false");
+  });
+}
+
+/* ---------------- View switch ---------------- */
+let currentView = "fleet";
+function setView(view) {
+  currentView = view;
+  document.getElementById("view-fleet").style.display = view === "fleet" ? "" : "none";
+  document.getElementById("view-assets").style.display = view === "assets" ? "" : "none";
+  document.getElementById("view-maintenance").style.display = view === "maintenance" ? "" : "none";
+  document.getElementById("view-lease").style.display = view === "lease" ? "" : "none";
+  document.querySelectorAll("#view-switch .pill").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view ? "true" : "false"));
+  if (view === "fleet") {
+    document.getElementById("page-title").textContent = "Fleet Operations Dashboard";
+    document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono">${filtered().length} / ${DATA.tractors.length}</span> active tractors, built from <span class="mono">RDW_EOS_Master_v7.xlsx</span>. Fuel data covers <span class="mono">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono">${DATA.meta.movementsPeriod}</span>.`;
+    document.getElementById("theme-note").textContent = "Revenue confidence varies by unit — see chip on each figure";
+    renderCharts(filtered());
+  } else if (view === "assets") {
+    document.getElementById("page-title").textContent = "Asset Inventory";
+    document.getElementById("page-meta").innerHTML = `Full asset register &mdash; <span class="mono">${ASSET_DATA.meta.assetCount}</span> assets (tractors, trailers, roll-off boxes) from <span class="mono">Dim_Equipment</span>: ${Object.entries(ASSET_DATA.meta.byType).map(([k,v]) => `${v} ${ASSET_TYPE_LABEL[k] || k}`).join(", ")}.`;
+    document.getElementById("theme-note").textContent = "Service Status is 'Active' fleet-wide — no retirement tracking in this source yet";
+    renderAssetCharts(filteredAssets());
+  } else if (view === "maintenance") {
+    document.getElementById("page-title").textContent = "Maintenance & Cost per Mile";
+    document.getElementById("page-meta").innerHTML = `<span class="mono">${MAINT_DATA.meta.workOrderCount}</span> tractor work orders, <span class="mono">${MAINT_DATA.meta.dateRange.join(" to ")}</span>, from <span class="mono">Fact_Maintenance_WO</span> (RTA), plus <span class="mono">${MAINT_DATA.meta.pmDueCount}</span> PM due items (<span class="mono">${MAINT_DATA.meta.pmDuePastDueCount}</span> past due) &mdash; manual pull, not yet a daily feed.`;
+    document.getElementById("theme-note").textContent = "Cost/mile excludes tractors below " + MIN_ANNUAL_MILES.toLocaleString() + " annualized miles (unreliable ratio)";
+    renderMaintCharts(filteredMaintTractors(), filteredWorkOrders(filteredMaintTractors()));
+  } else {
+    document.getElementById("page-title").textContent = "Insured Value & Lease Register";
+    document.getElementById("page-meta").innerHTML = `<span class="mono">${LEASE_DATA.meta.insuredCount}</span> of <span class="mono">${LEASE_DATA.meta.unitCount}</span> tractors/trailers carry a Transafe PD insured value; <span class="mono">${LEASE_DATA.meta.leasedCount}</span> are leased-in from ${Object.keys(LEASE_DATA.meta.lessorCounts).length} vendors at <span class="mono">${fmtUSDFull(LEASE_DATA.meta.leasedSum)}</span>/mo.`;
+    document.getElementById("theme-note").textContent = "Insured Value = Transafe PD schedule ($50K+ tracked only). Lease Rate = vendor invoice, leased-in units only.";
+    renderLeaseCharts(filteredLease());
+  }
+}
+
+document.getElementById("view-switch").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-view]");
+  if (btn) setView(btn.dataset.view);
+});
+
+renderFilters();
+renderQA();
+update();
+renderAssetFilters();
+updateAssets();
+renderMaintFilters();
+updateMaint();
+renderLeaseFilters();
+updateLease();
+setView("fleet");
+window.addEventListener("resize", () => {
+  renderCharts(filtered());
+  if (currentView === "assets") renderAssetCharts(filteredAssets());
+  if (currentView === "maintenance") renderMaintCharts(filteredMaintTractors(), filteredWorkOrders(filteredMaintTractors()));
+  if (currentView === "lease") renderLeaseCharts(filteredLease());
+});
+</script>

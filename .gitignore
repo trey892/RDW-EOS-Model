@@ -1,0 +1,7 @@
+# Real company data and build outputs -- never committed, this repo is public.
+data/
+output/
+*.csv
+*.xlsx
+*.xlsm
+recovered_lease_js.txt

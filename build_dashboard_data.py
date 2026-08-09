@@ -10,6 +10,7 @@ import model_version
 SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "dashboard_data.json"
 TRACTOR_STATUS_JSON = Path(__file__).parent / "output" / "tractor_status_data.json"
+DOWN_EQUIPMENT_JSON = Path(__file__).parent / "output" / "down_equipment_data.json"
 
 
 def sheet_df(wb, name):
@@ -44,6 +45,10 @@ def main():
     if TRACTOR_STATUS_JSON.exists():
         tractor_status = json.loads(TRACTOR_STATUS_JSON.read_text(encoding="utf-8"))
 
+    down_equipment = {}
+    if DOWN_EQUIPMENT_JSON.exists():
+        down_equipment = json.loads(DOWN_EQUIPMENT_JSON.read_text(encoding="utf-8"))
+
     records = []
     for row in tractors.itertuples():
         ak = row.AssetKey
@@ -63,6 +68,7 @@ def main():
 
         perf_row = perf.loc[ak] if ak in perf.index else None
         status_row = tractor_status.get(str(row.AssetID).strip().upper())
+        down_row = down_equipment.get(str(row.AssetID).strip().upper())
 
         def g(series, key):
             v = series.get(key) if series is not None else None
@@ -100,6 +106,12 @@ def main():
             "deadheadPct": None if deadhead_pct is None else round(deadhead_pct, 1),
             "fuelGallons": g(e, "Fuel Gallons"),
             "dispatchStatus": status_row["dispatchStatus"] if status_row else None,
+            "downDays": down_row["downDays"] if down_row else None,
+            "downStatus": down_row["status"] if down_row else None,
+            "downLocation": down_row["location"] if down_row else None,
+            "downShopNumber": down_row["shopNumber"] if down_row else None,
+            "downIssue": down_row["issue"] if down_row else None,
+            "downEtaCompletion": down_row["etaCompletion"] if down_row else None,
         })
 
     qa_log = sheet_df(wb, "QA_Source_Log")
@@ -130,6 +142,7 @@ def main():
     print("mpg matched:", df["mpg"].notna().sum())
     print("fuelGallons matched:", df["fuelGallons"].notna().sum())
     print("dispatchStatus:", df["dispatchStatus"].value_counts(dropna=False).to_dict())
+    print("downEquipment matched:", df["downStatus"].notna().sum(), "of", len(down_equipment), "down records")
 
 
 if __name__ == "__main__":

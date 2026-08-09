@@ -1036,15 +1036,20 @@ function renderCharts(rows) {
   availTableWrap.innerHTML = availableRows.length
     ? `<table class="data-table">
         <thead><tr><th>Style</th><th>Terminal</th><th>Tractor #</th></tr></thead>
-        <tbody>${availableRows.map(t => `<tr><td>${t.styleKey || "—"}</td><td>${t.terminal || "—"}</td><td>${t.assetId}</td></tr>`).join("")}</tbody>
+        <tbody>${availableRows.map(t => `<tr><td>${t.styleKey || "&mdash;"}</td><td>${t.terminal || "&mdash;"}</td><td>${t.assetId}</td></tr>`).join("")}</tbody>
       </table>`
     : `<div class="panel-note">No available (AVAILABL) tractors in the current selection.</div>`;
   pAvail.appendChild(availTableWrap);
 
-  /* Panel: Pending tractors -- out of service pending repair, beside Available. */
-  const pendingRows = rows.filter(t => t.dispatchStatus === "PENDING")
-    .sort((a, b) => (a.terminal || "").localeCompare(b.terminal || ""));
-  const pPending = panel("Pending Tractors", "PENDING &mdash; out of service", "pending-svg-unused");
+  /* Panel: Pending tractors -- out of service / down for repair, beside
+     Available. Sourced from the Down Report's "Down Equipment" tab (Down
+     Days, Status, Location, Issue, ETA), NOT just the RTD PENDING code --
+     a truck can be down for repair while still carrying its normal
+     driver's code in RTD (the driver just has no working unit at the
+     moment), so this report catches down trucks RTD PENDING alone misses. */
+  const pendingRows = rows.filter(t => t.downStatus != null)
+    .sort((a, b) => (b.downDays || 0) - (a.downDays || 0));
+  const pPending = panel("Pending Tractors", "down for repair &mdash; Down Report", "pending-svg-unused");
   pPending.querySelector("svg").remove();
   grid.appendChild(pPending);
   const pendingTableWrap = document.createElement("div");
@@ -1052,8 +1057,8 @@ function renderCharts(rows) {
   pendingTableWrap.className = "table-wrap";
   pendingTableWrap.innerHTML = pendingRows.length
     ? `<table class="data-table">
-        <thead><tr><th>Style</th><th>Terminal</th><th>Tractor #</th></tr></thead>
-        <tbody>${pendingRows.map(t => `<tr><td>${t.styleKey || "—"}</td><td>${t.terminal || "—"}</td><td>${t.assetId}</td></tr>`).join("")}</tbody>
+        <thead><tr><th>Tractor #</th><th>Terminal</th><th>Down Days</th><th>Status</th><th>Location</th><th>Issue</th><th>ETA</th></tr></thead>
+        <tbody>${pendingRows.map(t => `<tr><td>${t.assetId}</td><td>${t.terminal || "&mdash;"}</td><td class="num">${t.downDays != null ? t.downDays : "&mdash;"}</td><td>${t.downStatus || "&mdash;"}</td><td>${t.downLocation || "&mdash;"}</td><td>${t.downIssue || "&mdash;"}</td><td>${t.downEtaCompletion ? t.downEtaCompletion.slice(0, 10) : "&mdash;"}</td></tr>`).join("")}</tbody>
       </table>`
     : `<div class="panel-note">No pending tractors in the current selection.</div>`;
   pPending.appendChild(pendingTableWrap);

@@ -721,6 +721,13 @@ function renderTicker(rows) {
   const totalCostMiles = sum(costRows.map(t => t.annualizedDistance));
   const fuelPerMile = totalCostMiles > 0 ? totalFuelCost / totalCostMiles : null;
 
+  // Open tractors: dispatch status derived from the RTD "Assigned Driver" field
+  // ONLY (per standing direction) -- the RTD sheet's own coarse "Status" column
+  // is ignored, it doesn't reliably agree with Assigned Driver. AVAILABL =
+  // cleaned, inspected, ready for assignment ("open"), per the Tractor
+  // Allocation SOP's 9 official status codes.
+  const openTractors = rows.filter(t => t.dispatchStatus === "AVAILABL");
+
   const tiles = [
     { label: "Active tractors", value: fmtNum(rows.length), sub: rows.length ? Math.round(rows.length / DATA.tractors.length * 100) + "% of fleet" : "" },
     { label: "Annualized revenue", value: fmtUSD(revenue), sub: "best-available per unit" },
@@ -730,6 +737,7 @@ function renderTicker(rows) {
     { label: "Avg fuel efficiency", value: mpgMcLeod != null ? mpgMcLeod.toFixed(2) + " MPG" : "—", sub: "invoiced fuel-card gallons / annualized distance" },
     { label: "Fuel $/mile", value: fuelPerMile != null ? "$" + fuelPerMile.toFixed(2) : "—", sub: "Company tractors, invoiced fuel / annualized distance" },
     { label: "Avg deadhead", value: deadhead != null ? fmtPct(deadhead) : "—", sub: "empty / total miles" },
+    { label: "Open tractors", value: fmtNum(openTractors.length), sub: "AVAILABL &mdash; ready for assignment", cls: openTractors.length > 0 ? "accent" : "" },
   ];
 
   const el = document.getElementById("ticker");
@@ -1009,6 +1017,47 @@ function renderCharts(rows) {
   p1.insertBefore(legendRow(OWNERSHIP_ORDER.map(o => ({ color: getComputedColor(OWNERSHIP_COLOR[o]), label: o }))), p1.querySelector("svg"));
   grid.appendChild(p1);
 
+  /* Panel: Available trucks (AVAILABL) by Style, per Terminal -- dispatch
+     status derived from the RTD "Assigned Driver" field ONLY, per standing
+     direction (the RTD sheet's own coarse "Status" column is ignored -- it
+     doesn't reliably agree with Assigned Driver). Per the Tractor Allocation
+     SOP, the driver field must never be blank -- when a tractor has no
+     driver, dispatch puts the status code itself in that field instead.
+     AVAILABL = cleaned, inspected, ready for assignment ("open"). */
+  const STYLE_ORDER = ["Chemical", "PTO", "Van", "Straight Truck", "Unclassified"];
+  const availableRows = rows.filter(t => t.dispatchStatus === "AVAILABL")
+    .sort((a, b) => STYLE_ORDER.indexOf(a.styleKey) - STYLE_ORDER.indexOf(b.styleKey) || (a.terminal || "").localeCompare(b.terminal || ""));
+  const pAvail = panel("Available Trucks", "AVAILABL, by style &amp; terminal", "avail-svg-unused");
+  pAvail.querySelector("svg").remove();
+  grid.appendChild(pAvail);
+  const availTableWrap = document.createElement("div");
+  availTableWrap.id = "avail-table-container";
+  availTableWrap.className = "table-wrap";
+  availTableWrap.innerHTML = availableRows.length
+    ? `<table class="data-table">
+        <thead><tr><th>Style</th><th>Terminal</th><th>Tractor #</th></tr></thead>
+        <tbody>${availableRows.map(t => `<tr><td>${t.styleKey || "—"}</td><td>${t.terminal || "—"}</td><td>${t.assetId}</td></tr>`).join("")}</tbody>
+      </table>`
+    : `<div class="panel-note">No available (AVAILABL) tractors in the current selection.</div>`;
+  pAvail.appendChild(availTableWrap);
+
+  /* Panel: Pending tractors -- out of service pending repair, beside Available. */
+  const pendingRows = rows.filter(t => t.dispatchStatus === "PENDING")
+    .sort((a, b) => (a.terminal || "").localeCompare(b.terminal || ""));
+  const pPending = panel("Pending Tractors", "PENDING &mdash; out of service", "pending-svg-unused");
+  pPending.querySelector("svg").remove();
+  grid.appendChild(pPending);
+  const pendingTableWrap = document.createElement("div");
+  pendingTableWrap.id = "pending-table-container";
+  pendingTableWrap.className = "table-wrap";
+  pendingTableWrap.innerHTML = pendingRows.length
+    ? `<table class="data-table">
+        <thead><tr><th>Style</th><th>Terminal</th><th>Tractor #</th></tr></thead>
+        <tbody>${pendingRows.map(t => `<tr><td>${t.styleKey || "—"}</td><td>${t.terminal || "—"}</td><td>${t.assetId}</td></tr>`).join("")}</tbody>
+      </table>`
+    : `<div class="panel-note">No pending tractors in the current selection.</div>`;
+  pPending.appendChild(pendingTableWrap);
+
   const contribData = OWNERSHIP_ORDER
     .map(o => {
       const g = byOwnership.get(o) || [];
@@ -1157,6 +1206,7 @@ function renderCharts(rows) {
       format: (v) => fmtNum(v) + " mi",
     }
   );
+
 }
 
 function getComputedColor(varExpr) {

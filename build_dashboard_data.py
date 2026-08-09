@@ -7,6 +7,7 @@ import pandas as pd
 
 SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "dashboard_data.json"
+TRACTOR_STATUS_JSON = Path(__file__).parent / "output" / "tractor_status_data.json"
 
 
 def sheet_df(wb, name):
@@ -37,6 +38,10 @@ def main():
 
     perf = sheet_df(wb, "Fact_Vehicle_Performance").set_index("AssetKey")
 
+    tractor_status = {}
+    if TRACTOR_STATUS_JSON.exists():
+        tractor_status = json.loads(TRACTOR_STATUS_JSON.read_text(encoding="utf-8"))
+
     records = []
     for row in tractors.itertuples():
         ak = row.AssetKey
@@ -55,6 +60,7 @@ def main():
         deadhead_pct = (empty / (loaded + empty) * 100) if (loaded is not None and (loaded + empty) > 0) else None
 
         perf_row = perf.loc[ak] if ak in perf.index else None
+        status_row = tractor_status.get(str(row.AssetID).strip().upper())
 
         def g(series, key):
             v = series.get(key) if series is not None else None
@@ -66,6 +72,7 @@ def main():
             "ownership": row.OwnershipClass,
             "division": row.Division,
             "terminal": row.Terminal,
+            "styleKey": row.StyleKey,
             "year": None if pd.isna(row.Year) else int(row.Year),
             "make": row.Make,
             "model": row.Model,
@@ -90,6 +97,7 @@ def main():
             "emptyMiles": None if empty is None else round(empty, 1),
             "deadheadPct": None if deadhead_pct is None else round(deadhead_pct, 1),
             "fuelGallons": g(e, "Fuel Gallons"),
+            "dispatchStatus": status_row["dispatchStatus"] if status_row else None,
         })
 
     qa_log = sheet_df(wb, "QA_Source_Log")
@@ -115,6 +123,7 @@ def main():
     print("revenue confidence:", df["revenueConfidence"].value_counts().to_dict())
     print("mpg matched:", df["mpg"].notna().sum())
     print("fuelGallons matched:", df["fuelGallons"].notna().sum())
+    print("dispatchStatus:", df["dispatchStatus"].value_counts(dropna=False).to_dict())
 
 
 if __name__ == "__main__":

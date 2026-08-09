@@ -1,11 +1,12 @@
-"""Extract work-order history from RDW_EOS_Master_v8.xlsx for the Maintenance view."""
+"""Extract work-order history from RDW_EOS_Master_latest.xlsx for the Maintenance view."""
+import datetime
 import json
 from pathlib import Path
 
 import openpyxl
 import pandas as pd
 
-SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_v8.xlsx"
+SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "maintenance_data.json"
 
 
@@ -63,14 +64,17 @@ def main():
     n_past_due = sum(1 for r in pm_records if r["dueStatus"] == "Past Due")
 
     meta = {
-        "builtFrom": "RDW_EOS_Master_v8.xlsx / Fact_Maintenance_WO",
+        "builtFrom": "RDW_EOS_Master_latest.xlsx / Fact_Maintenance_WO",
         "workOrderCount": len(records),
         "tractorsWithWO": wo["AssetKey"].nunique(),
         "dateRange": [str(wo["OpenedDate"].min()), str(wo["OpenedDate"].max())],
         "pmDueCount": len(pm_records),
         "pmDuePastDueCount": n_past_due,
         "pmDueAssetCount": pm_due_tractors["AssetID"].nunique(),
-        "pmDueSource": "RTA Asset and Equipment PM Due export, all facilities -- automated: RTA schedule -> email -> Gmail filter -> Apps Script -> Drive (first automated run 2026-08-08)",
+        "pmDueSource": (
+            "RTA Asset and Equipment PM Due export, all facilities -- automated: "
+            f"RTA schedule -> email -> Gmail filter -> Apps Script -> Drive (last refreshed {datetime.date.today().isoformat()})"
+        ),
     }
     payload = {"meta": meta, "workOrders": records, "pmDue": pm_records}
     OUT.write_text(json.dumps(payload, default=str), encoding="utf-8")

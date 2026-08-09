@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-SRC = Path(__file__).parent / "data" / "raw" / "Asset_and_Equipment_PMs_Due_automated.csv"
+SRC = Path(__file__).parent / "data" / "raw" / "Asset_and_Equipment_PMs_Due_latest.csv"
 OUT = Path(__file__).parent / "output" / "pm_due_data.json"
 
 DUE_STATUSES = {"Past Due", "Due Soon", "Due Now", "Not Due"}

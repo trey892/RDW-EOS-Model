@@ -402,7 +402,7 @@
     <div>
       <div class="eyebrow">Robbie D. Wood, Inc &middot; RDW EOS</div>
       <h1 id="page-title">Fleet Operations Dashboard</h1>
-      <div class="meta" id="page-meta">Live filtering over <span class="mono" id="meta-count">&mdash;</span> active tractors, built from <span class="mono">RDW_EOS_Master_v5.xlsx</span>. Fuel data covers <span class="mono" id="meta-fuel-period">&mdash;</span>; movements from the <span class="mono" id="meta-mv-period">&mdash;</span>.</div>
+      <div class="meta" id="page-meta">Live filtering over <span class="mono" id="meta-count">&mdash;</span> active tractors, built from <span class="mono">RDW_EOS_Master_latest.xlsx</span>. Fuel data covers <span class="mono" id="meta-fuel-period">&mdash;</span>; movements from the <span class="mono" id="meta-mv-period">&mdash;</span>.</div>
     </div>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
       <div class="view-switch" id="view-switch" role="tablist" aria-label="Dashboard view">
@@ -441,7 +441,7 @@
   <div class="qa-strip">
     <span class="fg-label">Model health</span>
     <div id="qa-chips"></div>
-    <span class="foot-note">Per-tractor Contribution mixes revenue confidences (LOW = single-week estimate, MEDIUM = multi-month driver-actual) &mdash; treat cross-ownership comparisons directionally, not to the dollar. Full detail and QA_Exceptions in RDW_EOS_Master_v5.xlsx.</span>
+    <span class="foot-note">Per-tractor Contribution mixes revenue confidences (LOW = single-week estimate, MEDIUM = multi-month driver-actual) &mdash; treat cross-ownership comparisons directionally, not to the dollar. Full detail and QA_Exceptions in RDW_EOS_Master_latest.xlsx.</span>
   </div>
 </section>
 
@@ -1801,7 +1801,7 @@ function setView(view) {
   document.querySelectorAll("#view-switch .pill").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view ? "true" : "false"));
   if (view === "fleet") {
     document.getElementById("page-title").textContent = "Fleet Operations Dashboard";
-    document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono">${filtered().length} / ${DATA.tractors.length}</span> active tractors, built from <span class="mono">RDW_EOS_Master_v7.xlsx</span>. Fuel data covers <span class="mono">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono">${DATA.meta.movementsPeriod}</span>.`;
+    document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono">${filtered().length} / ${DATA.tractors.length}</span> active tractors, built from <span class="mono">${DATA.meta.builtFrom}</span>. Fuel data covers <span class="mono">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono">${DATA.meta.movementsPeriod}</span>.`;
     document.getElementById("theme-note").textContent = "Revenue confidence varies by unit — see chip on each figure";
     renderCharts(filtered());
   } else if (view === "assets") {
@@ -1811,7 +1811,7 @@ function setView(view) {
     renderAssetCharts(filteredAssets());
   } else if (view === "maintenance") {
     document.getElementById("page-title").textContent = "Maintenance & Cost per Mile";
-    document.getElementById("page-meta").innerHTML = `<span class="mono">${MAINT_DATA.meta.workOrderCount}</span> tractor work orders, <span class="mono">${MAINT_DATA.meta.dateRange.join(" to ")}</span>, from <span class="mono">Fact_Maintenance_WO</span> (RTA), plus <span class="mono">${MAINT_DATA.meta.pmDueCount}</span> PM due items (<span class="mono">${MAINT_DATA.meta.pmDuePastDueCount}</span> past due) &mdash; manual pull, not yet a daily feed.`;
+    document.getElementById("page-meta").innerHTML = `<span class="mono">${MAINT_DATA.meta.workOrderCount}</span> tractor work orders, <span class="mono">${MAINT_DATA.meta.dateRange.join(" to ")}</span>, from <span class="mono">Fact_Maintenance_WO</span> (RTA), plus <span class="mono">${MAINT_DATA.meta.pmDueCount}</span> PM due items (<span class="mono">${MAINT_DATA.meta.pmDuePastDueCount}</span> past due) &mdash; automated daily pull, last refreshed <span class="mono">${MAINT_DATA.meta.pmDueSource.match(/last refreshed ([\d-]+)/)?.[1] ?? "unknown"}</span>.`;
     document.getElementById("theme-note").textContent = "Cost/mile excludes tractors below " + MIN_ANNUAL_MILES.toLocaleString() + " annualized miles (unreliable ratio)";
     renderMaintCharts(filteredMaintTractors(), filteredWorkOrders(filteredMaintTractors()));
   } else {

@@ -5,3 +5,5 @@ output/
 *.xlsx
 *.xlsm
 recovered_lease_js.txt
+__pycache__/
+*.pyc

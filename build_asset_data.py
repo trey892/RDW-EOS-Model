@@ -1,4 +1,4 @@
-"""Extract the full asset register (tractors + trailers + RBOX) from RDW_EOS_Master_v8.xlsx."""
+"""Extract the full asset register (tractors + trailers + RBOX) from RDW_EOS_Master_latest.xlsx."""
 import datetime
 import json
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
-SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_v8.xlsx"
+SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "asset_data.json"
 
 
@@ -73,7 +73,7 @@ def main():
     by_type = pd.DataFrame(records)["assetType"].value_counts().to_dict()
 
     meta = {
-        "builtFrom": "RDW_EOS_Master_v8.xlsx",
+        "builtFrom": "RDW_EOS_Master_latest.xlsx",
         "assetCount": len(records),
         "byType": by_type,
     }

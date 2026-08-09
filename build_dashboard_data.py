@@ -1,11 +1,11 @@
-"""Extract a compact per-tractor JSON dataset from RDW_EOS_Master_v8.xlsx for the HTML dashboard."""
+"""Extract a compact per-tractor JSON dataset from RDW_EOS_Master_latest.xlsx for the HTML dashboard."""
 import json
 from pathlib import Path
 
 import openpyxl
 import pandas as pd
 
-SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_v8.xlsx"
+SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "dashboard_data.json"
 
 
@@ -95,7 +95,7 @@ def main():
     qa_status = qa_log["Status"].value_counts().to_dict()
 
     meta = {
-        "builtFrom": "RDW_EOS_Master_v8.xlsx",
+        "builtFrom": "RDW_EOS_Master_latest.xlsx",
         "tractorCount": len(records),
         "fuelPeriod": "2026-05-06 to 2026-08-04",
         "movementsPeriod": "McLeod export 2026-08-02",

@@ -402,7 +402,7 @@
     <div>
       <div class="eyebrow">Robbie D. Wood, Inc &middot; RDW EOS</div>
       <h1 id="page-title">Fleet Operations Dashboard</h1>
-      <div class="meta" id="page-meta">Live filtering over <span class="mono" id="meta-count">&mdash;</span> active tractors, built from <span class="mono">RDW_EOS_Master_latest.xlsx</span>. Fuel data covers <span class="mono" id="meta-fuel-period">&mdash;</span>; movements from the <span class="mono" id="meta-mv-period">&mdash;</span>.</div>
+      <div class="meta" id="page-meta">Live filtering over <span class="mono" id="meta-count">&mdash;</span> active tractors, <span class="mono" id="meta-version">&mdash;</span>. Fuel data covers <span class="mono" id="meta-fuel-period">&mdash;</span>; movements from the <span class="mono" id="meta-mv-period">&mdash;</span>.</div>
     </div>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
       <div class="view-switch" id="view-switch" role="tablist" aria-label="Dashboard view">
@@ -1963,7 +1963,10 @@ function setView(view) {
   document.querySelectorAll("#view-switch .pill").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view ? "true" : "false"));
   if (view === "fleet") {
     document.getElementById("page-title").textContent = "Fleet Operations Dashboard";
-    document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono" id="meta-count">${filtered().length} / ${DATA.tractors.length}</span> active tractors, built from <span class="mono">${DATA.meta.builtFrom}</span>. Fuel data covers <span class="mono" id="meta-fuel-period">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono" id="meta-mv-period">${DATA.meta.movementsPeriod}</span>.`;
+    const versionText = DATA.meta.modelVersion != null
+      ? `v${DATA.meta.modelVersion}, refreshed ${DATA.meta.lastRefreshed || "—"}`
+      : "version unknown";
+    document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono" id="meta-count">${filtered().length} / ${DATA.tractors.length}</span> active tractors, <span class="mono" id="meta-version">${versionText}</span>. Fuel data covers <span class="mono" id="meta-fuel-period">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono" id="meta-mv-period">${DATA.meta.movementsPeriod}</span>.`;
     document.getElementById("theme-note").textContent = "Revenue confidence varies by unit — see chip on each figure";
     renderCharts(filtered());
   } else if (view === "assets") {

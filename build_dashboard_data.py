@@ -5,6 +5,8 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
+import model_version
+
 SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "dashboard_data.json"
 TRACTOR_STATUS_JSON = Path(__file__).parent / "output" / "tractor_status_data.json"
@@ -103,8 +105,12 @@ def main():
     qa_log = sheet_df(wb, "QA_Source_Log")
     qa_status = qa_log["Status"].value_counts().to_dict()
 
+    version = model_version.read()
+
     meta = {
         "builtFrom": "RDW_EOS_Master_latest.xlsx",
+        "modelVersion": version["version"],
+        "lastRefreshed": version["lastRefreshed"],
         "tractorCount": len(records),
         "fuelPeriod": "2026-05-06 to 2026-08-04",
         "fuelHistoryPeriod": "Aug 2025 to Jul 2026 (invoiced fuel-card, reconciled 2026-08-03)",

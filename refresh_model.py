@@ -9,7 +9,8 @@ forward unchanged: McLeod (Movements/Loads) and Samsara (fuel/idle) are not yet
 automated, still manual exports.
 
 Designed to run unattended (daily cloud routine): reads and writes the same
-canonical filename, so no version number needs to be tracked or bumped by hand.
+canonical filename, so no versioned filename needs to be tracked by hand --
+bumps the simple incrementing counter in model_version.py instead.
 """
 import datetime
 import json
@@ -17,6 +18,8 @@ from pathlib import Path
 
 import openpyxl
 import pandas as pd
+
+import model_version
 
 MASTER = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 PM_DUE_JSON = Path(__file__).parent / "output" / "pm_due_data.json"
@@ -163,10 +166,12 @@ def main():
         qa_exceptions.to_excel(writer, sheet_name="QA_Exceptions", index=False)
         data_dictionary.to_excel(writer, sheet_name="Data_Dictionary", index=False)
     tmp.replace(MASTER)
+    v = model_version.bump()
 
     print("=== REFRESH SUMMARY ===")
     print(f"Fact_PM_Due: {n_total} rows ({n_unmatched} unmatched), {n_past_due} Past Due ({round(n_past_due/n_total*100)}%)")
     print(f"QA_Source_Log rows: {len(qa_source_log)}")
+    print(f"Model version: v{v['version']} (refreshed {v['lastRefreshed']})")
     print(f"\nRefreshed {MASTER}")
 
 

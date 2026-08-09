@@ -21,6 +21,8 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
+import model_version
+
 MASTER = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 FUEL_JSON = Path(__file__).parent / "output" / "fuel_history_data.json"
 PERIOD = "FY2026-Annualized"
@@ -229,11 +231,13 @@ def main():
         qa_exceptions.to_excel(writer, sheet_name="QA_Exceptions", index=False)
         data_dictionary.to_excel(writer, sheet_name="Data_Dictionary", index=False)
     tmp.replace(MASTER)
+    v = model_version.bump()
 
     print("=== FUEL HISTORY REFRESH SUMMARY ===")
     print(f"Matched {n_matched} of {len(fuel)} fuel-history units to Dim_Equipment ({n_unmatched_units} unmatched)")
     print(f"Fuel Cost refreshed for {n_cost_updated} Company tractors")
     print(f"Fuel Gallons added for {n_gallons_added} tractors (all ownership)")
+    print(f"Model version: v{v['version']} (refreshed {v['lastRefreshed']})")
     print(f"\nRefreshed {MASTER}")
 
 

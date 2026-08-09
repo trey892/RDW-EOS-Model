@@ -698,6 +698,15 @@ function renderTicker(rows) {
   const confirmedLoss = rows.filter(t => t.contribution != null && t.contribution < 0 && t.revenue > 0);
   const deadhead = mean(clean(rows, "deadheadPct"));
 
+  // Fuel $/mile: invoiced fuel cost (HIGH confidence, independent of Samsara)
+  // over McLeod Movements loaded+empty miles -- distinct from both the Samsara
+  // MPG figure above and the Maintenance tab's $/mile (which uses total direct
+  // cost, not fuel alone).
+  const fuelMileRows = rows.filter(t => t.fuelCost != null && (t.loadedMiles != null || t.emptyMiles != null));
+  const totalFuelCost = sum(fuelMileRows.map(t => t.fuelCost));
+  const totalMcLeodMiles = sum(fuelMileRows.map(t => (t.loadedMiles || 0) + (t.emptyMiles || 0)));
+  const fuelPerMile = totalMcLeodMiles > 0 ? totalFuelCost / totalMcLeodMiles : null;
+
   const tiles = [
     { label: "Active tractors", value: fmtNum(rows.length), sub: rows.length ? Math.round(rows.length / DATA.tractors.length * 100) + "% of fleet" : "" },
     { label: "Annualized revenue", value: fmtUSD(revenue), sub: "best-available per unit" },
@@ -705,6 +714,7 @@ function renderTicker(rows) {
     { label: "Confirmed loss-making", value: fmtNum(confirmedLoss.length), sub: "revenue > 0, contribution < 0", cls: confirmedLoss.length > 0 ? "crit" : "" },
     { label: "Zero-revenue gap", value: fmtNum(zeroRevenue.length), sub: "LOW-confidence week read $0 — not a confirmed loss", cls: zeroRevenue.length > 0 ? "warn" : "" },
     { label: "Avg fuel efficiency", value: mpg != null ? mpg.toFixed(2) + " MPG" : "—", sub: "Samsara, " + DATA.meta.fuelPeriod },
+    { label: "Fuel $/mile", value: fuelPerMile != null ? "$" + fuelPerMile.toFixed(2) : "—", sub: "invoiced fuel / McLeod miles" },
     { label: "Avg deadhead", value: deadhead != null ? fmtPct(deadhead) : "—", sub: "empty / total miles" },
   ];
 

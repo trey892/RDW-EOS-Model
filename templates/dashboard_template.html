@@ -432,6 +432,9 @@
       <span class="fg-label">Terminal</span>
       <select class="pill" id="filter-terminal"></select>
     </div>
+    <div class="filter-group" style="flex:1; min-width:200px;">
+      <input type="search" class="pill" id="fleet-search" placeholder="Search tractor #, make, model&hellip;" style="width:100%; max-width:260px; border-radius:8px; cursor:text;">
+    </div>
     <button class="reset-btn" id="reset-filters">Reset filters</button>
     <span class="filter-count" id="filter-count"></span>
   </div>
@@ -640,7 +643,7 @@ const mean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : null;
 const sum = (arr) => arr.reduce((a,b)=>a+b,0);
 const clean = (arr, key) => arr.map(d => d[key]).filter(v => v != null);
 
-const state = { division: "All", ownership: "All", terminal: "All" };
+const state = { division: "All", ownership: "All", terminal: "All", search: "" };
 
 const OWNERSHIP_ORDER = ["Company", "Lease Purchase", "Owner Operator"];
 const OWNERSHIP_COLOR = { "Company": "var(--s-company)", "Lease Purchase": "var(--s-lp)", "Owner Operator": "var(--s-oo)" };
@@ -653,10 +656,15 @@ function terminals() {
 }
 
 function filtered() {
+  const q = state.search.trim().toLowerCase();
   return DATA.tractors.filter(t => {
     if (state.division !== "All" && t.division !== state.division) return false;
     if (state.ownership !== "All" && t.ownership !== state.ownership) return false;
     if (state.terminal !== "All" && t.terminal !== state.terminal) return false;
+    if (q) {
+      const hay = `${t.assetId} ${t.make || ""} ${t.model || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 }
@@ -1087,8 +1095,10 @@ function renderFilters() {
   });
   termSelect.onchange = () => { state.terminal = termSelect.value; update(); };
 
+  document.getElementById("fleet-search").oninput = (e) => { state.search = e.target.value; update(); };
   document.getElementById("reset-filters").onclick = () => {
-    state.division = "All"; state.ownership = "All"; state.terminal = "All";
+    state.division = "All"; state.ownership = "All"; state.terminal = "All"; state.search = "";
+    document.getElementById("fleet-search").value = "";
     update();
   };
 }
@@ -1801,7 +1811,7 @@ function setView(view) {
   document.querySelectorAll("#view-switch .pill").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view ? "true" : "false"));
   if (view === "fleet") {
     document.getElementById("page-title").textContent = "Fleet Operations Dashboard";
-    document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono">${filtered().length} / ${DATA.tractors.length}</span> active tractors, built from <span class="mono">${DATA.meta.builtFrom}</span>. Fuel data covers <span class="mono">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono">${DATA.meta.movementsPeriod}</span>.`;
+    document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono" id="meta-count">${filtered().length} / ${DATA.tractors.length}</span> active tractors, built from <span class="mono">${DATA.meta.builtFrom}</span>. Fuel data covers <span class="mono" id="meta-fuel-period">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono" id="meta-mv-period">${DATA.meta.movementsPeriod}</span>.`;
     document.getElementById("theme-note").textContent = "Revenue confidence varies by unit — see chip on each figure";
     renderCharts(filtered());
   } else if (view === "assets") {

@@ -1402,6 +1402,95 @@ function renderAssetCharts(rows) {
     { color: getComputedColor("var(--muted)"), label: "Unknown" },
   ]);
   p4.insertBefore(p4legend, p4.querySelector("svg"));
+
+  /* Panels 5-6: sell/trade signals. Cross-reference DATA.tractors (the Fleet
+     Operations dataset) by assetId for the economics fields (dispatchStatus,
+     maintenanceCost, contribution, hubMileage, annualizedDistance, age) --
+     kept in one place rather than duplicated into ASSET_DATA. */
+  const tractorEconByAssetId = new Map(DATA.tractors.map(t => [t.assetId, t]));
+  const tractorRows = rows.filter(a => a.assetType === "TRACTOR");
+
+  /* Panel 5: Coming Due to Sell -- tractors RTD already has flagged TOSELL
+     (Assigned Driver field), same source as the Fleet Operations panels. */
+  const tosellRows = tractorRows
+    .map(a => ({ a, econ: tractorEconByAssetId.get(a.assetId) }))
+    .filter(({ econ }) => econ && econ.dispatchStatus === "TOSELL");
+  const p5 = panel("Coming Due to Sell", "TOSELL &mdash; flagged in RTD dispatch status", "asset-tosell-svg-unused");
+  p5.querySelector("svg").remove();
+  grid.appendChild(p5);
+  const tosellWrap = document.createElement("div");
+  tosellWrap.className = "table-wrap";
+  tosellWrap.innerHTML = tosellRows.length
+    ? `<table class="data-table">
+        <thead><tr><th>Tractor #</th><th>Terminal</th><th>Style</th><th>Age</th><th>Mileage</th></tr></thead>
+        <tbody>${tosellRows.map(({ a, econ }) => `<tr><td>${a.assetId}</td><td>${a.terminal || "&mdash;"}</td><td>${a.styleKey || "&mdash;"}</td><td class="num">${a.age != null ? a.age + " yrs" : "&mdash;"}</td><td class="num">${econ.hubMileage != null ? fmtNum(econ.hubMileage) : "&mdash;"}</td></tr>`).join("")}</tbody>
+      </table>`
+    : `<div class="panel-note">No tractors currently flagged TOSELL in the current selection.</div>`;
+  p5.appendChild(tosellWrap);
+
+  /* Panel 6: Trade/Sell Suggestion -- a blended score (not mileage alone),
+     scoped to Company-owned tractors (RDW's own capital decision; LP/OO
+     units aren't RDW's to trade). Each of 4 factors is converted to a
+     percentile rank (0-100) within this scope, higher = more sell-worthy,
+     then averaged into one composite score:
+       - maintenance $/mile (Maintenance Cost RDW Paid / Annualized Distance)
+       - contribution, inverted (low/negative contribution -> high score)
+       - hub mileage
+       - age
+     Equal-weighted per standing direction ("blend of cost + mileage + age",
+     not cost-dominant). */
+  function percentileRank(values, target) {
+    const below = values.filter(v => v < target).length;
+    const equal = values.filter(v => v === target).length;
+    return values.length ? ((below + 0.5 * equal) / values.length) * 100 : 0;
+  }
+  const tradeCandidates = tractorRows
+    .map(a => ({ a, econ: tractorEconByAssetId.get(a.assetId) }))
+    .filter(({ a, econ }) =>
+      a.ownership === "Company" && econ &&
+      econ.maintenanceCost != null && econ.annualizedDistance > 0 &&
+      econ.contribution != null && econ.hubMileage != null && a.age != null
+    )
+    .map(({ a, econ }) => ({ a, econ, maintPerMile: econ.maintenanceCost / econ.annualizedDistance }));
+
+  const maintVals = tradeCandidates.map(c => c.maintPerMile);
+  const contribVals = tradeCandidates.map(c => c.econ.contribution);
+  const mileageVals = tradeCandidates.map(c => c.econ.hubMileage);
+  const ageVals = tradeCandidates.map(c => c.a.age);
+
+  const scored = tradeCandidates.map(c => {
+    const maintScore = percentileRank(maintVals, c.maintPerMile);
+    const contribScore = 100 - percentileRank(contribVals, c.econ.contribution); // low contribution -> high score
+    const mileageScore = percentileRank(mileageVals, c.econ.hubMileage);
+    const ageScore = percentileRank(ageVals, c.a.age);
+    const composite = (maintScore + contribScore + mileageScore + ageScore) / 4;
+    return { ...c, maintScore, contribScore, mileageScore, ageScore, composite };
+  }).sort((x, y) => y.composite - x.composite).slice(0, 10);
+
+  const p6 = panel(
+    "Trade/Sell Suggestion",
+    "Company tractors, blended score: maintenance $/mile + contribution + mileage + age (equal-weighted)",
+    "chart-trade-suggestion", true
+  );
+  grid.appendChild(p6);
+  rankedBar(
+    document.getElementById("chart-trade-suggestion"),
+    scored.map(s => ({
+      label: s.a.assetId,
+      value: s.composite,
+      tooltip: `<b>${s.a.assetId}</b> &middot; ${s.a.terminal || "—"} &middot; ${s.a.age} yrs<br>`
+        + `Maint $/mile: <b>$${s.maintPerMile.toFixed(2)}</b> (percentile ${s.maintScore.toFixed(0)})<br>`
+        + `Contribution: <b>${fmtUSDFull(s.econ.contribution)}</b> (percentile ${s.contribScore.toFixed(0)})<br>`
+        + `Mileage: <b>${fmtNum(s.econ.hubMileage)}</b> (percentile ${s.mileageScore.toFixed(0)})<br>`
+        + `Age: <b>${s.a.age} yrs</b> (percentile ${s.ageScore.toFixed(0)})<br>`
+        + `<b>Composite score: ${s.composite.toFixed(0)} / 100</b>`,
+    })),
+    {
+      width: 900, height: Math.max(120, scored.length * 30),
+      max: 100,
+      format: (v) => v.toFixed(0),
+    }
+  );
 }
 
 function renderAssetTable(rows) {

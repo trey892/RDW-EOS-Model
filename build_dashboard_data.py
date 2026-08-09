@@ -41,6 +41,8 @@ def main():
 
     perf = sheet_df(wb, "Fact_Vehicle_Performance").set_index("AssetKey")
 
+    today_year = 2026  # session "today" per environment context, avoid datetime.now() drift
+
     tractor_status = {}
     if TRACTOR_STATUS_JSON.exists():
         tractor_status = json.loads(TRACTOR_STATUS_JSON.read_text(encoding="utf-8"))
@@ -70,6 +72,13 @@ def main():
         status_row = tractor_status.get(str(row.AssetID).strip().upper())
         down_row = down_equipment.get(str(row.AssetID).strip().upper())
 
+        age = None
+        if row.InServiceDate:
+            try:
+                age = today_year - int(str(row.InServiceDate)[:4])
+            except (ValueError, TypeError):
+                age = None
+
         def g(series, key):
             v = series.get(key) if series is not None else None
             return None if v is None or pd.isna(v) else round(float(v), 2)
@@ -85,6 +94,10 @@ def main():
             "make": row.Make,
             "model": row.Model,
             "status": row.ServiceStatus,
+            "inServiceDate": row.InServiceDate,
+            "age": age,
+            "financed": row.Financed,
+            "payoffDate": row.NotePayoffDate,
             "revenue": g(e, None) if best_revenue is None else round(float(best_revenue), 2),
             "revenueConfidence": revenue_confidence,
             "revenueBasis": revenue_basis,

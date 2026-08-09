@@ -926,6 +926,52 @@ function stackedBar(svg, groups, segments, opts) {
   });
 }
 
+/* ---------------- Ranked horizontal bar (single series, magnitude vs a threshold) ---------------- */
+function rankedBar(svg, data, opts) {
+  // data: [{label, value, tooltip}], sorted by caller (soonest/most-urgent first).
+  // opts: {width, height, max, refLine, refLabel, format}
+  const W = opts.width, H = opts.height;
+  const padL = 54, padR = 74, padT = 10, padB = 6;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const max = opts.max;
+  const scaleX = (v) => padL + (Math.min(v, max) / max) * plotW;
+
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  const n = data.length;
+  const rh = Math.min(20, plotH / n * 0.62);
+  data.forEach((d, i) => {
+    const cy = padT + (plotH / n) * (i + 0.5);
+    const x2 = scaleX(d.value);
+    const rect = svgEl("rect", {
+      x: padL, y: cy - rh / 2, width: Math.max(1, x2 - padL), height: rh, rx: 3,
+      fill: "var(--accent)", class: "bar",
+    });
+    rect.addEventListener("mousemove", (e) => tooltip(d.tooltip, e.clientX, e.clientY));
+    rect.addEventListener("mouseleave", hideTooltip);
+    svg.appendChild(rect);
+
+    const nameLabel = svgEl("text", { x: padL - 8, y: cy + 3.5, class: "cat-label", "text-anchor": "end" });
+    nameLabel.textContent = d.label;
+    svg.appendChild(nameLabel);
+
+    const valLabel = svgEl("text", { x: x2 + 6, y: cy + 3.5, class: "value-label", "text-anchor": "start" });
+    valLabel.textContent = opts.format(d.value);
+    svg.appendChild(valLabel);
+  });
+
+  if (opts.refLine != null) {
+    const rx = scaleX(opts.refLine);
+    const line = svgEl("line", { x1: rx, x2: rx, y1: padT - 2, y2: padT + plotH + 2, class: "baseline" });
+    line.setAttribute("stroke-dasharray", "3,3");
+    svg.appendChild(line);
+    const rlabel = svgEl("text", { x: rx, y: padT - 4, class: "axis-label", "text-anchor": "middle" });
+    rlabel.textContent = opts.refLabel || "";
+    svg.appendChild(rlabel);
+  }
+}
+
 /* ---------------- Panel builders ---------------- */
 function panel(title, note, id, wide) {
   const div = document.createElement("div");
@@ -1079,6 +1125,38 @@ function renderCharts(rows) {
       tooltip: `<b>${o}</b><br>avg deadhead: <b>${fmtPct(mean(clean(g,"deadheadPct")))}</b>` };
   });
   verticalBarChart(document.getElementById("chart-deadhead"), dhData, { width: 380, height: 220, format: (v) => v.toFixed(1) + "%" });
+
+  /* Panel: Coming eligible for LP -- Company tractors approaching the 600k-mile
+     LP-flip threshold. Not gated on note-payoff/financing status -- mileage is
+     the whole rule per standing guidance. LP/Owner Operator tractors excluded
+     (already LP, or not RDW's to flip); tractors already >= 600k excluded too
+     (already eligible, not "coming" eligible). */
+  const LP_MILEAGE_THRESHOLD = 600000;
+  const lpCandidates = rows
+    .filter(t => t.ownership === "Company" && t.hubMileage != null && t.hubMileage < LP_MILEAGE_THRESHOLD)
+    .sort((a, b) => b.hubMileage - a.hubMileage)
+    .slice(0, 10);
+  const p7 = panel(
+    "Top 10 Coming Eligible for LP",
+    `Company tractors nearest the ${fmtNum(LP_MILEAGE_THRESHOLD)}-mile LP-flip threshold`,
+    "chart-lp-eligible", true
+  );
+  grid.appendChild(p7);
+  rankedBar(
+    document.getElementById("chart-lp-eligible"),
+    lpCandidates.map(t => ({
+      label: t.assetId,
+      value: t.hubMileage,
+      tooltip: `<b>${t.assetId}</b> &middot; ${t.division} &middot; ${t.terminal || "—"}<br>Current mileage: <b>${fmtNum(t.hubMileage)}</b><br>Miles to LP-eligible: <b>${fmtNum(LP_MILEAGE_THRESHOLD - t.hubMileage)}</b>`,
+    })),
+    {
+      width: 900, height: Math.max(120, lpCandidates.length * 30),
+      max: LP_MILEAGE_THRESHOLD * 1.05,
+      refLine: LP_MILEAGE_THRESHOLD,
+      refLabel: fmtNum(LP_MILEAGE_THRESHOLD) + " mi",
+      format: (v) => fmtNum(v) + " mi",
+    }
+  );
 }
 
 function getComputedColor(varExpr) {

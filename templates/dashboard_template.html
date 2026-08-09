@@ -1491,6 +1491,38 @@ function renderAssetCharts(rows) {
       format: (v) => v.toFixed(0),
     }
   );
+
+  /* Panel 7: Paccar Lease turn-in status. The 8 unit numbers are manually
+     identified (Trey, 2026-08-09) -- Paccar hasn't confirmed exact lease
+     maturity dates yet ("close," per Trey), so this shows current dispatch
+     status as the best available signal of how close each unit already is
+     to turning in, not a real turn-in date. Cross-reference with the
+     Fleet Operations TOSELL/AVAILABL panels: most of these are already
+     showing up there ahead of Paccar's confirmation. */
+  const paccarRows = tractorRows
+    .map(a => ({ a, econ: tractorEconByAssetId.get(a.assetId) }))
+    .filter(({ econ }) => econ && econ.isPaccarLease);
+  const paccarUnmatched = DATA.meta.paccarUnmatchedUnits || [];
+  const p7 = panel(
+    "Paccar Lease &mdash; Turn-In Status",
+    "8 units identified by Trey &mdash; exact maturity dates pending Paccar's response",
+    "paccar-svg-unused", true
+  );
+  p7.querySelector("svg").remove();
+  grid.appendChild(p7);
+  const paccarWrap = document.createElement("div");
+  paccarWrap.className = "table-wrap";
+  let paccarHtml = paccarRows.length
+    ? `<table class="data-table">
+        <thead><tr><th>Tractor #</th><th>Terminal</th><th>Dispatch Status</th><th>Mileage</th><th>Age</th><th>Maturity Date</th></tr></thead>
+        <tbody>${paccarRows.map(({ a, econ }) => `<tr><td>${a.assetId}</td><td>${a.terminal || "&mdash;"}</td><td>${(econ && econ.dispatchStatus) || "&mdash;"}</td><td class="num">${econ && econ.hubMileage != null ? fmtNum(econ.hubMileage) : "&mdash;"}</td><td class="num">${a.age != null ? a.age + " yrs" : "&mdash;"}</td><td>${(econ && econ.paccarMaturityDate) || "pending Paccar"}</td></tr>`).join("")}</tbody>
+      </table>`
+    : `<div class="panel-note">No matched Paccar Lease tractors in the current selection.</div>`;
+  if (paccarUnmatched.length) {
+    paccarHtml += `<div class="panel-note" style="margin-top:8px;">&#9888; ${paccarUnmatched.join(", ")} listed as Paccar Lease but not found in the current tractor roster &mdash; may already be off-roster or a unit-number mismatch worth checking.</div>`;
+  }
+  paccarWrap.innerHTML = paccarHtml;
+  p7.appendChild(paccarWrap);
 }
 
 function renderAssetTable(rows) {

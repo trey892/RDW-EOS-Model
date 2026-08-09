@@ -11,6 +11,7 @@ SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "dashboard_data.json"
 TRACTOR_STATUS_JSON = Path(__file__).parent / "output" / "tractor_status_data.json"
 DOWN_EQUIPMENT_JSON = Path(__file__).parent / "output" / "down_equipment_data.json"
+PACCAR_LEASE_JSON = Path(__file__).parent / "data" / "raw" / "paccar_lease_units.json"
 
 
 def sheet_df(wb, name):
@@ -51,6 +52,10 @@ def main():
     if DOWN_EQUIPMENT_JSON.exists():
         down_equipment = json.loads(DOWN_EQUIPMENT_JSON.read_text(encoding="utf-8"))
 
+    paccar_lease_units = {}
+    if PACCAR_LEASE_JSON.exists():
+        paccar_lease_units = json.loads(PACCAR_LEASE_JSON.read_text(encoding="utf-8")).get("units", {})
+
     records = []
     for row in tractors.itertuples():
         ak = row.AssetKey
@@ -71,6 +76,7 @@ def main():
         perf_row = perf.loc[ak] if ak in perf.index else None
         status_row = tractor_status.get(str(row.AssetID).strip().upper())
         down_row = down_equipment.get(str(row.AssetID).strip().upper())
+        paccar_row = paccar_lease_units.get(str(row.AssetID).strip().upper())
 
         age = None
         if row.InServiceDate:
@@ -125,12 +131,19 @@ def main():
             "downShopNumber": down_row["shopNumber"] if down_row else None,
             "downIssue": down_row["issue"] if down_row else None,
             "downEtaCompletion": down_row["etaCompletion"] if down_row else None,
+            "isPaccarLease": paccar_row is not None,
+            "paccarMaturityDate": paccar_row["maturityDate"] if paccar_row else None,
         })
 
     qa_log = sheet_df(wb, "QA_Source_Log")
     qa_status = qa_log["Status"].value_counts().to_dict()
 
     version = model_version.read()
+
+    matched_paccar_ids = {r["assetId"] for r in records if r["isPaccarLease"]}
+    unmatched_paccar_ids = sorted(set(paccar_lease_units.keys()) - {str(x).strip().upper() for x in matched_paccar_ids})
+    if unmatched_paccar_ids:
+        print(f"WARNING: Paccar lease units not found in current tractor roster: {unmatched_paccar_ids}")
 
     meta = {
         "builtFrom": "RDW_EOS_Master_latest.xlsx",
@@ -141,6 +154,7 @@ def main():
         "fuelHistoryPeriod": "Aug 2025 to Jul 2026 (invoiced fuel-card, reconciled 2026-08-03)",
         "movementsPeriod": "McLeod export 2026-08-02",
         "qaStatus": qa_status,
+        "paccarUnmatchedUnits": unmatched_paccar_ids,
     }
 
     payload = {"meta": meta, "tractors": records}

@@ -691,21 +691,35 @@ function renderTicker(rows) {
   const revenue = sum(clean(rows, "revenue"));
   const contribution = sum(clean(rows, "contribution"));
   const margin = revenue ? (contribution / revenue * 100) : null;
-  const mpg = mean(clean(rows, "mpg"));
   // A $0 revenue week (LOW-confidence single-week estimate) is a data gap, not
   // a confirmed loss -- keep the two separate so one doesn't masquerade as the other.
   const zeroRevenue = rows.filter(t => t.revenue === 0);
   const confirmedLoss = rows.filter(t => t.contribution != null && t.contribution < 0 && t.revenue > 0);
   const deadhead = mean(clean(rows, "deadheadPct"));
 
-  // Fuel $/mile: invoiced fuel cost (HIGH confidence, independent of Samsara)
-  // over McLeod Movements loaded+empty miles -- distinct from both the Samsara
-  // MPG figure above and the Maintenance tab's $/mile (which uses total direct
-  // cost, not fuel alone).
-  const fuelMileRows = rows.filter(t => t.fuelCost != null && (t.loadedMiles != null || t.emptyMiles != null));
-  const totalFuelCost = sum(fuelMileRows.map(t => t.fuelCost));
-  const totalMcLeodMiles = sum(fuelMileRows.map(t => (t.loadedMiles || 0) + (t.emptyMiles || 0)));
-  const fuelPerMile = totalMcLeodMiles > 0 ? totalFuelCost / totalMcLeodMiles : null;
+  // Fuel efficiency + Fuel $/mile: both blended (sum/sum, not per-tractor average)
+  // from the invoiced fuel-card history (HIGH confidence, verified to the penny) --
+  // not Samsara MPG/fuel-cost. The mileage side, though, still has to be
+  // Annualized Distance (Samsara odometer-based annualization), NOT raw McLeod
+  // Movements loaded+empty miles: Fact_Movements is an unannualized export with no
+  // reliable date range, so dividing a full 12-month fuel figure by it silently
+  // produced a nonsense ~1 MPG the first time this was tried. Samsara MPG is still
+  // used for the MPG-vs-idle-time chart further down (idle % has no other source).
+  // MPG: gallons apply fleet-wide regardless of ownership (an engine-efficiency
+  // figure, not a cost one) -- scope to tractors that actually have a gallons match.
+  const gallonRows = rows.filter(t => t.annualizedDistance != null && t.fuelGallons != null);
+  const totalGallons = sum(gallonRows.map(t => t.fuelGallons));
+  const totalGallonMiles = sum(gallonRows.map(t => t.annualizedDistance));
+  const mpgMcLeod = totalGallons > 0 ? totalGallonMiles / totalGallons : null;
+
+  // Fuel $/mile: RDW's cost, so scope strictly to Company tractors with a real
+  // (>0) invoiced fuel match on BOTH sides of the ratio -- LP/OO fuel is $0 by
+  // design (driver-paid) and must not dilute the denominator with miles that have
+  // no corresponding RDW fuel dollars behind them.
+  const costRows = rows.filter(t => t.ownership === "Company" && t.annualizedDistance != null && t.fuelCost > 0);
+  const totalFuelCost = sum(costRows.map(t => t.fuelCost));
+  const totalCostMiles = sum(costRows.map(t => t.annualizedDistance));
+  const fuelPerMile = totalCostMiles > 0 ? totalFuelCost / totalCostMiles : null;
 
   const tiles = [
     { label: "Active tractors", value: fmtNum(rows.length), sub: rows.length ? Math.round(rows.length / DATA.tractors.length * 100) + "% of fleet" : "" },
@@ -713,8 +727,8 @@ function renderTicker(rows) {
     { label: "Annualized contribution", value: fmtUSD(contribution), sub: margin != null ? fmtPct(margin) + " margin" : "", cls: contribution < 0 ? "crit" : "accent" },
     { label: "Confirmed loss-making", value: fmtNum(confirmedLoss.length), sub: "revenue > 0, contribution < 0", cls: confirmedLoss.length > 0 ? "crit" : "" },
     { label: "Zero-revenue gap", value: fmtNum(zeroRevenue.length), sub: "LOW-confidence week read $0 — not a confirmed loss", cls: zeroRevenue.length > 0 ? "warn" : "" },
-    { label: "Avg fuel efficiency", value: mpg != null ? mpg.toFixed(2) + " MPG" : "—", sub: "Samsara, " + DATA.meta.fuelPeriod },
-    { label: "Fuel $/mile", value: fuelPerMile != null ? "$" + fuelPerMile.toFixed(2) : "—", sub: "invoiced fuel / McLeod miles" },
+    { label: "Avg fuel efficiency", value: mpgMcLeod != null ? mpgMcLeod.toFixed(2) + " MPG" : "—", sub: "invoiced fuel-card gallons / annualized distance" },
+    { label: "Fuel $/mile", value: fuelPerMile != null ? "$" + fuelPerMile.toFixed(2) : "—", sub: "Company tractors, invoiced fuel / annualized distance" },
     { label: "Avg deadhead", value: deadhead != null ? fmtPct(deadhead) : "—", sub: "empty / total miles" },
   ];
 

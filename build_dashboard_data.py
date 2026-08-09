@@ -89,6 +89,7 @@ def main():
             "loadedMiles": None if loaded is None else round(loaded, 1),
             "emptyMiles": None if empty is None else round(empty, 1),
             "deadheadPct": None if deadhead_pct is None else round(deadhead_pct, 1),
+            "fuelGallons": g(e, "Fuel Gallons"),
         })
 
     qa_log = sheet_df(wb, "QA_Source_Log")
@@ -98,6 +99,7 @@ def main():
         "builtFrom": "RDW_EOS_Master_latest.xlsx",
         "tractorCount": len(records),
         "fuelPeriod": "2026-05-06 to 2026-08-04",
+        "fuelHistoryPeriod": "Aug 2025 to Jul 2026 (invoiced fuel-card, reconciled 2026-08-03)",
         "movementsPeriod": "McLeod export 2026-08-02",
         "qaStatus": qa_status,
     }
@@ -112,6 +114,7 @@ def main():
     print(df.groupby("division")["contribution"].agg(["count", "sum", "mean"]))
     print("revenue confidence:", df["revenueConfidence"].value_counts().to_dict())
     print("mpg matched:", df["mpg"].notna().sum())
+    print("fuelGallons matched:", df["fuelGallons"].notna().sum())
 
 
 if __name__ == "__main__":

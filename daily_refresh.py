@@ -2,15 +2,21 @@
 Runs the full daily refresh pipeline in order. Expects, before this runs:
   - output/RDW_EOS_Master_latest.xlsx already in place (the current canonical model)
   - data/raw/Asset_and_Equipment_PMs_Due_latest.csv already in place (freshest RTA pull)
-  - data/raw/RTD_latest.xlsx already in place (freshest RTD Tractor Listing pull --
-    optional; if missing, dispatch-status/style/current-hub data is carried forward
-    from whatever tractor_status_data.json already exists rather than failing the run)
   - output/lease_data.json already in place (lease data isn't automated -- carried forward as-is)
+  - The following are all OPTIONAL -- if any is missing, that step is skipped and its
+    prior output/*.json is carried forward rather than failing the run:
+      data/raw/RTD_latest.xlsx             (dispatch status/style/current-hub mileage)
+      data/raw/Orientation_latest.xlsm     (Orientation Inbound)
+      data/raw/PM_Compliance_latest.csv    (PM Compliance % by vehicle)
+      data/raw/Unbilled_Orders_latest.txt  (Unbilled Orders by terminal, PDF text
+                                             pre-extracted via Drive's read_file_content)
 
 Produces, in order:
   1. output/pm_due_data.json          (parse_pm_due)
   2. output/RDW_EOS_Master_latest.xlsx refreshed in place (refresh_model)
-  3. output/tractor_status_data.json  (parse_tractor_status)
+  3. output/tractor_status_data.json, orientation_data.json, pm_compliance_data.json,
+     unbilled_orders_data.json (parse_tractor_status, parse_orientation,
+     parse_pm_compliance, parse_unbilled_orders)
   4. output/dashboard_data.json, asset_data.json, maintenance_data.json (build_*_data)
   5. output/RDW_Fleet_Dashboard.html  (assemble_dashboard)
 

@@ -1,10 +1,11 @@
 """
-Derive each tractor's dispatch status from the RTD "TRACTOR LISTING" export's
-Assigned Driver field ONLY -- per Trey's direction, the sheet's own coarse
-"Status" column (blank/In Shop/Open/Yard Truck) is not authoritative and is
-ignored here; it doesn't reliably agree with Assigned Driver (some tractors
-marked "Open" already have a real driver code, meaning Status wasn't updated
-at time of movement per the Tractor Allocation SOP).
+Derive each tractor's dispatch status, style code, and current hub mileage from
+the RTD "TRACTOR LISTING" export's Assigned Driver field ONLY -- per Trey's
+direction, the sheet's own coarse "Status" column (blank/In Shop/Open/Yard
+Truck) is not authoritative and is ignored here; it doesn't reliably agree
+with Assigned Driver (some tractors marked "Open" already have a real driver
+code, meaning Status wasn't updated at time of movement per the Tractor
+Allocation SOP).
 
 Per that SOP, the Assigned Driver field must never be blank -- when a tractor
 has no actual driver, dispatch puts the status code itself into that field.
@@ -12,15 +13,21 @@ The 9 official codes: SPARE, ASSIGNED, AVAILABL, PENDING, PREP, ORIENTAT,
 TOBELP, TOSELL, WRECK. "Open" = AVAILABL (cleaned, inspected, ready for
 assignment).
 
-Not part of the daily automated refresh -- dispatch pulls this export by hand,
-re-run this script when Trey supplies a newer one.
+As of 2026-08-19: this reads the same daily-synced RTD workbook (canonical
+name RTD_latest.xlsx, refreshed each run from the "SharePoint Sync" Drive
+folder -- same source as the PM/mileage data) instead of a separately
+hand-supplied export, so this is now part of the automated daily refresh.
+`style` is the sheet's raw "Type" column code (CS, MP, SN, etc.) -- these are
+RTA-internal type codes, not yet mapped to friendly labels (Chemical/Waste/
+Straight Truck style names seen elsewhere); shown as-is until a real mapping
+is confirmed rather than guessed.
 """
 import json
 from pathlib import Path
 
 import openpyxl
 
-SRC = Path(__file__).parent / "data" / "raw" / "RTD_Tractor_Listing_latest.xlsx"
+SRC = Path(__file__).parent / "data" / "raw" / "RTD_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "tractor_status_data.json"
 
 SOP_CODES = {"SPARE", "ASSIGNED", "AVAILABL", "PENDING", "PREP", "ORIENTAT", "TOBELP", "TOSELL", "WRECK"}
@@ -55,6 +62,8 @@ def main():
             "dateAssigned": r[idx["Date Assigned"]],
             "dispatcher": r[idx["Dispatcher"]],
             "fleet": r[idx["Fleet"]],
+            "style": (r[idx["Type"]] or "").strip(),
+            "currentHub": r[idx["Current Hub"]],
         }
 
     from collections import Counter

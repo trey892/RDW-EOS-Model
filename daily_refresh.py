@@ -28,10 +28,22 @@ from pathlib import Path
 import parse_pm_due
 import refresh_model
 import parse_tractor_status
+import parse_orientation
+import parse_pm_compliance
+import parse_unbilled_orders
 import build_dashboard_data
 import build_asset_data
 import build_maintenance_data
 import assemble_dashboard
+
+
+def _run_optional(label, module):
+    """Run module.main() if its SRC file exists; otherwise skip and keep prior output."""
+    if module.SRC.exists():
+        print(f"\n--- {label} ---")
+        module.main()
+    else:
+        print(f"\n--- {label} skipped (no {module.SRC.name} found -- keeping prior output) ---")
 
 
 def main():
@@ -46,12 +58,10 @@ def main():
     else:
         print("\n--- [1-2/6] skipped (no new PM Due pull) ---")
 
-    if parse_tractor_status.SRC.exists():
-        print("\n--- [3/6] parse_tractor_status ---")
-        parse_tractor_status.main()
-    else:
-        print(f"\n--- [3/6] skipped (no {parse_tractor_status.SRC.name} found -- "
-              "keeping prior tractor_status_data.json) ---")
+    _run_optional("[3/6] parse_tractor_status", parse_tractor_status)
+    _run_optional("[3b/6] parse_orientation", parse_orientation)
+    _run_optional("[3c/6] parse_pm_compliance", parse_pm_compliance)
+    _run_optional("[3d/6] parse_unbilled_orders", parse_unbilled_orders)
 
     print("\n--- [4/6] build_dashboard_data ---")
     build_dashboard_data.main()

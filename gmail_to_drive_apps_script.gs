@@ -31,22 +31,16 @@ const SOURCES = [
     extraQuery: null,
   },
   {
-    // McLeod driver-revenue reports -- shares the "Reports" label with ~3,600 other
-    // messages, so extraQuery (sender + exact subjects) is what keeps this scoped to
-    // just these four. Add more subject:"..." clauses here if more reports come in
-    // (e.g. a Chemical division version).
+    // McLeod automated reports -- shares the "Reports" label with ~3,600 other
+    // (human-sent) messages, so extraQuery scopes this to the automated sender only.
+    // Sender-based on purpose, not an exact-subject allowlist: a subject allowlist
+    // silently drops any new report type McLeod starts sending (this is exactly how
+    // "Unbilled Orders" got missed for weeks) -- matching the sender means every
+    // current and future automated McLeod report is picked up with no code change.
     sourceLabel: "3Operations Managment/Reports",
     processedLabel: "3Operations Managment/Reports/McLeod-Saved",
     driveFolderId: "1oGIyA_0U6XLYjmv3mVadsH3xIYbkVh5k", // McLeod Reports Inbox
-    extraQuery:
-      'newer_than:14d from:noreply@robbiedwood.com ' +
-      '(subject:"Month To Date WASTE Driver Total Revenue" OR ' +
-      'subject:"Birmingham Monthly Driver Line Haul Revenue" OR ' +
-      'subject:"Roll Off Monthly Driver Line Haul Revenue" OR ' +
-      'subject:"UNAS Monthly Driver Line Haul Revenue" OR ' +
-      'subject:"Unbilled Orders" OR ' +
-      'subject:"BHM Unbilled Orders" OR ' +
-      'subject:"Unbilled Ordes Roll Off")', // sic -- McLeod's own subject line is misspelled "Ordes"
+    extraQuery: 'newer_than:14d from:noreply@robbiedwood.com',
   },
 ];
 

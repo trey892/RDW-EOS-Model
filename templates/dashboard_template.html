@@ -3,21 +3,26 @@
 <style>
   :root {
     color-scheme: light;
-    --page: #f6f4ef;
+    --page: #eef0f2;
     --surface: #ffffff;
-    --surface-2: #fbf9f4;
-    --ink: #15181d;
-    --ink-2: #565f6c;
-    --muted: #7c8494;
-    --border: rgba(10,12,16,0.11);
-    --grid: #e7e2d7;
-    --accent: #c9791f;
+    --surface-2: #f2f3f5;
+    --ink: #16181c;
+    --ink-2: #4c5058;
+    --muted: #7b7f88;
+    --border: rgba(10,12,20,0.14);
+    --grid: #dde0e4;
+    --accent: #c81e24;
+    --accent-2: #8f1116;
+    --accent-mid: #c81e24;
     --accent-ink: #ffffff;
-    --accent-wash: rgba(201,121,31,0.10);
+    --accent-wash: rgba(200,30,36,0.10);
+    --chrome-1: #e6e8eb;
+    --chrome-2: #c7cbd1;
+    --chrome-hi: rgba(255,255,255,0.65);
     --good: #0ca30c;
     --warning: #b9840f;
     --serious: #c65a30;
-    --critical: #d03b3b;
+    --critical: #d1470f;
     --s-company: #2a78d6;
     --s-lp: #eb6834;
     --s-oo: #1baf7a;
@@ -29,21 +34,26 @@
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
       color-scheme: dark;
-      --page: #0b0e12;
-      --surface: #12161c;
-      --surface-2: #171d25;
-      --ink: #eef1f5;
-      --ink-2: #99a3b1;
-      --muted: #6b7684;
-      --border: rgba(255,255,255,0.09);
-      --grid: #232a34;
-      --accent: #f0a63a;
-      --accent-ink: #1a1206;
-      --accent-wash: rgba(240,166,58,0.14);
-      --good: #0ca30c;
+      --page: #0a0b0d;
+      --surface: #16181c;
+      --surface-2: #1d2024;
+      --ink: #f2f3f5;
+      --ink-2: #aeb3bb;
+      --muted: #6d727c;
+      --border: rgba(205,210,220,0.14);
+      --grid: #282b30;
+      --accent: #ff3d44;
+      --accent-2: #8f1116;
+      --accent-mid: #b11e24;
+      --accent-ink: #1a0506;
+      --accent-wash: rgba(255,61,68,0.14);
+      --chrome-1: #3c3f45;
+      --chrome-2: #212327;
+      --chrome-hi: rgba(255,255,255,0.16);
+      --good: #26c968;
       --warning: #fab219;
       --serious: #ec835a;
-      --critical: #e66767;
+      --critical: #ff8a3d;
       --s-company: #3987e5;
       --s-lp: #d95926;
       --s-oo: #199e70;
@@ -55,21 +65,26 @@
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --page: #0b0e12;
-    --surface: #12161c;
-    --surface-2: #171d25;
-    --ink: #eef1f5;
-    --ink-2: #99a3b1;
-    --muted: #6b7684;
-    --border: rgba(255,255,255,0.09);
-    --grid: #232a34;
-    --accent: #f0a63a;
-    --accent-ink: #1a1206;
-    --accent-wash: rgba(240,166,58,0.14);
-    --good: #0ca30c;
+    --page: #0a0b0d;
+    --surface: #16181c;
+    --surface-2: #1d2024;
+    --ink: #f2f3f5;
+    --ink-2: #aeb3bb;
+    --muted: #6d727c;
+    --border: rgba(205,210,220,0.14);
+    --grid: #282b30;
+    --accent: #ff3d44;
+    --accent-2: #8f1116;
+    --accent-mid: #b11e24;
+    --accent-ink: #1a0506;
+    --accent-wash: rgba(255,61,68,0.14);
+    --chrome-1: #3c3f45;
+    --chrome-2: #212327;
+    --chrome-hi: rgba(255,255,255,0.16);
+    --good: #26c968;
     --warning: #fab219;
     --serious: #ec835a;
-    --critical: #e66767;
+    --critical: #ff8a3d;
     --s-company: #3987e5;
     --s-lp: #d95926;
     --s-oo: #199e70;
@@ -80,11 +95,12 @@
   }
   :root[data-theme="light"] {
     color-scheme: light;
-    --page: #f6f4ef; --surface: #ffffff; --surface-2: #fbf9f4;
-    --ink: #15181d; --ink-2: #565f6c; --muted: #7c8494;
-    --border: rgba(10,12,16,0.11); --grid: #e7e2d7;
-    --accent: #c9791f; --accent-ink: #ffffff; --accent-wash: rgba(201,121,31,0.10);
-    --good: #0ca30c; --warning: #b9840f; --serious: #c65a30; --critical: #d03b3b;
+    --page: #eef0f2; --surface: #ffffff; --surface-2: #f2f3f5;
+    --ink: #16181c; --ink-2: #4c5058; --muted: #7b7f88;
+    --border: rgba(10,12,20,0.14); --grid: #dde0e4;
+    --accent: #c81e24; --accent-2: #8f1116; --accent-mid: #c81e24; --accent-ink: #ffffff; --accent-wash: rgba(200,30,36,0.10);
+    --chrome-1: #e6e8eb; --chrome-2: #c7cbd1; --chrome-hi: rgba(255,255,255,0.65);
+    --good: #0ca30c; --warning: #b9840f; --serious: #c65a30; --critical: #d1470f;
     --s-company: #2a78d6; --s-lp: #eb6834; --s-oo: #1baf7a;
     --s-chemical: #4a3aa7; --s-waste: #008300; --s-pos: #2a78d6; --s-neg: #e34948;
   }
@@ -112,8 +128,10 @@
   /* ---------- Header / gantry ---------- */
   .gantry {
     background: var(--surface);
+    background: linear-gradient(155deg, var(--chrome-1) 0%, var(--surface) 38%, var(--chrome-2) 76%, var(--chrome-1) 100%);
     border-bottom: 3px solid var(--accent);
-    padding: 22px clamp(16px, 4vw, 40px) 18px;
+    box-shadow: 0 1px 0 var(--chrome-hi) inset, 0 6px 22px rgba(0,0,0,.22);
+    padding: 20px clamp(16px, 4vw, 40px) 0;
     position: relative;
     overflow: hidden;
   }
@@ -121,7 +139,7 @@
     content: "";
     position: absolute; inset: 0;
     background: repeating-linear-gradient(135deg, var(--accent) 0 14px, transparent 14px 28px);
-    opacity: 0.06;
+    opacity: 0.05;
     pointer-events: none;
   }
   .gantry-row {
@@ -131,6 +149,7 @@
     gap: 20px;
     flex-wrap: wrap;
     position: relative;
+    padding-bottom: 16px;
   }
   .gantry h1 {
     margin: 2px 0 0;
@@ -138,6 +157,8 @@
     font-weight: 800;
     letter-spacing: -0.01em;
     text-wrap: balance;
+    background: linear-gradient(120deg, var(--ink) 40%, var(--accent) 130%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .gantry .meta {
     font-size: 12.5px;
@@ -150,6 +171,23 @@
     color: var(--muted);
     text-align: right;
   }
+
+  /* ---------- Header status strip: live clock, version, last refresh ---------- */
+  .status-strip {
+    position: relative;
+    display: flex; flex-wrap: wrap; gap: 0;
+    border-top: 1px solid var(--border);
+    background: linear-gradient(90deg, var(--accent-2), var(--accent-mid) 45%, var(--accent-2));
+  }
+  .status-item {
+    display: flex; align-items: baseline; gap: 7px;
+    padding: 7px clamp(16px, 4vw, 40px) 7px 0;
+    margin-left: clamp(16px, 4vw, 40px);
+    border-left: 1px solid rgba(255,255,255,.28);
+  }
+  .status-item:first-child { margin-left: clamp(16px, 4vw, 40px); border-left: none; padding-left: 0; }
+  .status-label { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.9); }
+  .status-value { font: 700 12.5px/1 ui-monospace, monospace; color: #fff; letter-spacing: .01em; }
 
   /* ---------- Ticker strip ---------- */
   .ticker {
@@ -215,7 +253,7 @@
   .pill {
     appearance: none;
     border: 1px solid var(--border);
-    background: var(--surface);
+    background: linear-gradient(180deg, var(--chrome-1), var(--surface) 55%, var(--chrome-2));
     color: var(--ink-2);
     font: inherit;
     font-size: 12.5px;
@@ -223,14 +261,16 @@
     padding: 6px 13px;
     border-radius: 100px;
     cursor: pointer;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    box-shadow: 0 1px 0 var(--chrome-hi) inset;
+    transition: background 0.12s, color 0.12s, border-color 0.12s, box-shadow 0.12s;
   }
   .pill:hover { border-color: var(--accent); color: var(--ink); }
   .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   .pill[aria-pressed="true"] {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    border-color: var(--accent-2);
     color: var(--accent-ink);
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 0 0 1px var(--accent-2), 0 2px 8px var(--accent-wash);
   }
   select.pill {
     padding-right: 26px;
@@ -265,7 +305,8 @@
     padding: 16px clamp(16px, 4vw, 40px) 40px;
   }
   .panel {
-    background: var(--surface);
+    position: relative;
+    background: linear-gradient(165deg, var(--surface) 0%, var(--surface) 80%, var(--surface-2) 100%);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 16px 18px 14px;
@@ -273,6 +314,12 @@
     flex-direction: column;
     gap: 10px;
     min-width: 0;
+    overflow: hidden;
+  }
+  .panel::before {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--chrome-1) 55%, var(--chrome-2));
   }
   .panel.wide { grid-column: 1 / -1; }
   .panel-toggle { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -372,19 +419,25 @@
   /* ---------- View switch ---------- */
   .view-switch {
     display: inline-flex;
-    background: var(--surface-2);
+    background: linear-gradient(180deg, var(--chrome-2), var(--surface-2));
     border: 1px solid var(--border);
     border-radius: 100px;
     padding: 3px;
     gap: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.18) inset;
   }
   .view-switch .pill {
     border: none;
     background: none;
+    box-shadow: none;
     padding: 6px 14px;
   }
   .view-switch .pill:hover { border-color: transparent; }
-  .view-switch .pill[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .view-switch .pill[aria-pressed="true"] {
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+    color: var(--accent-ink);
+    box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 2px 8px var(--accent-wash);
+  }
 
   /* ---------- Data table ---------- */
   .table-wrap { overflow-x: auto; }
@@ -746,6 +799,11 @@
         <div class="theme-note" id="theme-note">Revenue confidence varies by unit &mdash; see chip on each figure</div>
       </div>
     </div>
+  </div>
+  <div class="status-strip">
+    <div class="status-item"><span class="status-label">Date/Time</span><span class="status-value mono" id="header-clock">&mdash;</span></div>
+    <div class="status-item"><span class="status-label">Version</span><span class="status-value mono" id="header-version">&mdash;</span></div>
+    <div class="status-item"><span class="status-label">Last Refresh</span><span class="status-value mono" id="header-refresh">&mdash;</span></div>
   </div>
 </header>
 
@@ -3932,5 +3990,30 @@ window.addEventListener("resize", () => {
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initRdwPanelDrilldown, { once: true });
   else initRdwPanelDrilldown();
+})();
+</script>
+
+<script>
+(function () {
+  function initHeaderStatus() {
+    const versionEl = document.getElementById("header-version");
+    const refreshEl = document.getElementById("header-refresh");
+    const clockEl = document.getElementById("header-clock");
+    if (versionEl) versionEl.textContent = DATA?.meta?.modelVersion != null ? "v" + DATA.meta.modelVersion : "—";
+    if (refreshEl) {
+      const raw = DATA?.meta?.lastRefreshed;
+      const parsed = raw ? new Date(raw + "T12:00:00") : null;
+      refreshEl.textContent = parsed && !Number.isNaN(parsed.getTime())
+        ? parsed.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+        : (raw || "—");
+    }
+    if (clockEl) {
+      const tick = () => { clockEl.textContent = new Date().toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }); };
+      tick();
+      setInterval(tick, 1000);
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initHeaderStatus, { once: true });
+  else initHeaderStatus();
 })();
 </script>

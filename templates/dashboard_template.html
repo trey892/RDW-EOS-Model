@@ -3568,6 +3568,10 @@ window.addEventListener("resize", () => {
     const sourceNode = document.getElementById("rdw-record-source");
     if (!backdrop) return;
     let lastFocus = null;
+    // Other drilldown entry points (e.g. the PACCAR row handler, a separate closure) open this
+    // same modal directly -- expose a way for them to register the trigger too, so closeRecord()
+    // always has somewhere real to return focus before hiding the modal.
+    window.__rdwSetRecordLastFocus = trigger => { lastFocus = trigger; };
 
     const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 
@@ -3586,9 +3590,13 @@ window.addEventListener("resize", () => {
     }
     function closeRecord() {
       backdrop.classList.remove("open");
+      // Move focus off the modal BEFORE hiding it -- aria-hidden on a focus-containing ancestor
+      // is an ARIA violation Chrome warns on. Fall back to blur() if no trigger was registered,
+      // so focus is never left stranded inside regardless of which code opened the modal.
+      if (lastFocus) lastFocus.focus();
+      else if (document.activeElement && backdrop.contains(document.activeElement)) document.activeElement.blur();
       backdrop.setAttribute("aria-hidden", "true");
       document.body.classList.remove("rdw-drill-open");
-      if (lastFocus) lastFocus.focus();
     }
 
     document.addEventListener("click", e => {
@@ -3824,9 +3832,9 @@ window.addEventListener("resize", () => {
     }
     function closeDetail() {
       drawer.classList.remove("open"); backdrop.classList.remove("open");
+      if (lastFocus) lastFocus.focus(); // move focus off the drawer BEFORE hiding it -- same ARIA-violation reason as closeRecord()
       drawer.setAttribute("aria-hidden", "true");
       document.body.classList.remove("rdw-drill-open");
-      if (lastFocus) lastFocus.focus();
     }
     async function exportCsv() {
       const quote = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
@@ -3883,6 +3891,7 @@ window.addEventListener("resize", () => {
       const source2 = document.getElementById("rdw-record-source");
       const backdrop2 = document.getElementById("rdw-record-backdrop");
       if (!backdrop2) return;
+      window.__rdwSetRecordLastFocus?.(trigger); // so closeRecord() (defined in the other drilldown script) returns focus here on close
       eyebrow2.textContent = "PACCAR Lease Turn-In";
       title2.textContent = "Unit " + text(unit.assetId);
       body2.innerHTML = '<div class="rdw-record-grid">' + fields.map(([l, v]) => '<div class="rdw-record-field"><span class="rdw-record-label">' + esc(l) + '</span><span class="rdw-record-value">' + esc(v) + '</span></div>').join("") + "</div>";

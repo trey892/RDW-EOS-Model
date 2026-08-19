@@ -612,6 +612,47 @@
   .maint-reason { display:inline-flex; align-items:center; padding:2px 7px; border:1px solid var(--warning); border-radius:999px; color:var(--warning); font-size:10px; font-weight:800; }
   .maint-na { color:var(--warning); font-weight:800; }
   @media (max-width:640px) { .maint-panel-summary { grid-template-columns:1fr; } .maint-down-row { grid-template-columns:62px 45px minmax(82px,1fr) 42px; } }
+
+  /* ---------- Sticky header / feed-health / ticker / filterbar ---------- */
+  :root {
+    --rdw-header-height: 0px;
+    --rdw-subheader-height: 0px;
+    --rdw-ticker-height: 0px;
+  }
+  .gantry { position: sticky; top: 0; z-index: 100; }
+  .feed-health { position: sticky; top: var(--rdw-header-height); z-index: 96; }
+  .view > .ticker {
+    position: sticky;
+    top: calc(var(--rdw-header-height) + var(--rdw-subheader-height));
+    z-index: 94;
+  }
+  .view > .filterbar {
+    position: sticky;
+    top: calc(var(--rdw-header-height) + var(--rdw-subheader-height) + var(--rdw-ticker-height));
+    z-index: 93;
+    box-shadow: 0 5px 12px rgba(0,0,0,.10);
+  }
+
+  /* ---------- Universal row-click detail modal ---------- */
+  table.data-table tbody tr { cursor: pointer; }
+  table.data-table tbody tr:hover td { background: var(--accent-wash); }
+  table.data-table tbody tr:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+  .rdw-record-backdrop { position: fixed; inset: 0; z-index: 230; display: grid; place-items: center; padding: 18px; background: rgba(5,8,12,.72); opacity: 0; pointer-events: none; transition: opacity .16s ease; }
+  .rdw-record-backdrop.open { opacity: 1; pointer-events: auto; }
+  .rdw-record-modal { width: min(640px,100%); max-height: min(86dvh,760px); overflow: auto; border: 1px solid var(--border); border-top: 5px solid var(--accent); border-radius: 13px; background: var(--surface); color: var(--ink); box-shadow: 0 24px 70px rgba(0,0,0,.38); transform: translateY(10px) scale(.985); transition: transform .16s ease; }
+  .rdw-record-backdrop.open .rdw-record-modal { transform: none; }
+  .rdw-record-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+  .rdw-record-eyebrow { color: var(--accent); font-size: 10px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+  .rdw-record-title { margin: 3px 0 0; font-size: clamp(18px,3vw,22px); line-height: 1.2; }
+  .rdw-record-close { appearance: none; width: 34px; height: 34px; flex: none; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); color: var(--ink); font: 20px/1 inherit; cursor: pointer; }
+  .rdw-record-body { padding: 16px 20px 6px; }
+  .rdw-record-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--border); border-radius: 9px; background: var(--border); }
+  .rdw-record-field { min-width: 0; padding: 9px 11px; background: var(--surface-2); }
+  .rdw-record-label { display: block; margin-bottom: 3px; color: var(--muted); font-size: 9.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .rdw-record-value { display: block; color: var(--ink); font-size: 12.5px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .rdw-record-source { padding: 12px 20px 18px; color: var(--muted); font-size: 10.5px; }
+  body.rdw-drill-open { overflow: hidden; }
+  @media (max-width: 640px) { .rdw-record-backdrop { padding: 0; place-items: end center; } .rdw-record-modal { width: 100%; max-height: 92dvh; border-radius: 13px 13px 0 0; } .rdw-record-grid { grid-template-columns: 1fr; } }
 </style>
 
 <header class="gantry">
@@ -646,6 +687,20 @@
   <span class="feed-health-chip" data-feed="samsara">Samsara checking</span>
   <span class="feed-health-chip" data-feed="drops">Direct drops checking</span>
   <span class="feed-health-mode">Published snapshot</span>
+</div>
+
+<div class="rdw-record-backdrop" id="rdw-record-backdrop" aria-hidden="true">
+  <section class="rdw-record-modal" role="dialog" aria-modal="true" aria-labelledby="rdw-record-title">
+    <div class="rdw-record-head">
+      <div>
+        <div class="rdw-record-eyebrow" id="rdw-record-eyebrow">Record detail</div>
+        <h2 class="rdw-record-title" id="rdw-record-title">Detail</h2>
+      </div>
+      <button type="button" class="rdw-record-close" id="rdw-record-close" aria-label="Close detail">&times;</button>
+    </div>
+    <div class="rdw-record-body" id="rdw-record-body"></div>
+    <div class="rdw-record-source" id="rdw-record-source"></div>
+  </section>
 </div>
 
 <section class="view" id="view-overview" style="display:none">
@@ -3348,4 +3403,86 @@ window.addEventListener("resize", () => {
   if (currentView === "maintenance") renderMaintCharts(filteredMaintTractors(), filteredWorkOrders(filteredMaintTractors()));
   if (currentView === "lease") renderLeaseCharts(filteredLease());
 });
+</script>
+
+<script>
+(function () {
+  function initRdwRowDrilldown() {
+    const backdrop = document.getElementById("rdw-record-backdrop");
+    const eyebrow = document.getElementById("rdw-record-eyebrow");
+    const titleNode = document.getElementById("rdw-record-title");
+    const bodyNode = document.getElementById("rdw-record-body");
+    const sourceNode = document.getElementById("rdw-record-source");
+    if (!backdrop) return;
+    let lastFocus = null;
+
+    const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+    function openRecord(headers, cells, trigger, sectionTitle) {
+      lastFocus = trigger;
+      eyebrow.textContent = sectionTitle || "Record detail";
+      titleNode.textContent = cells[0] || "Detail";
+      bodyNode.innerHTML = '<div class="rdw-record-grid">' + headers.map((h, i) =>
+        '<div class="rdw-record-field"><span class="rdw-record-label">' + esc(h) + '</span><span class="rdw-record-value">' + (esc(cells[i]) || "—") + '</span></div>'
+      ).join("") + "</div>";
+      sourceNode.textContent = "Values reflect this row as currently rendered in the table above, under the active filters.";
+      backdrop.classList.add("open");
+      backdrop.setAttribute("aria-hidden", "false");
+      document.body.classList.add("rdw-drill-open");
+      setTimeout(() => document.getElementById("rdw-record-close").focus(), 20);
+    }
+    function closeRecord() {
+      backdrop.classList.remove("open");
+      backdrop.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("rdw-drill-open");
+      if (lastFocus) lastFocus.focus();
+    }
+
+    document.addEventListener("click", e => {
+      if (e.target.closest("#rdw-record-close")) { closeRecord(); return; }
+      if (e.target === backdrop) { closeRecord(); return; }
+      const row = e.target.closest("table.data-table tbody tr");
+      if (!row || !row.closest("section.view")) return;
+      if (e.target.closest("a,button,input,select")) return;
+      const table = row.closest("table.data-table");
+      const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
+      const cells = Array.from(row.children).map(td => td.textContent.trim());
+      if (!headers.length || cells.length !== headers.length) return;
+      const panelTitle = row.closest(".panel")?.querySelector(".panel-title")?.textContent
+        || document.getElementById("page-title")?.textContent
+        || "Record detail";
+      openRecord(headers, cells, row, panelTitle);
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && backdrop.classList.contains("open")) closeRecord();
+    });
+  }
+
+  function syncStickyDashboardControls() {
+    const root = document.documentElement;
+    const header = document.querySelector(".gantry");
+    const subheader = document.getElementById("feed-health");
+    const activeView = Array.from(document.querySelectorAll("section.view")).find(v => getComputedStyle(v).display !== "none");
+    const ticker = activeView && activeView.querySelector(":scope > .ticker");
+    root.style.setProperty("--rdw-header-height", Math.ceil(header ? header.getBoundingClientRect().height : 0) + "px");
+    root.style.setProperty("--rdw-subheader-height", Math.ceil(subheader ? subheader.getBoundingClientRect().height : 0) + "px");
+    root.style.setProperty("--rdw-ticker-height", Math.ceil(ticker ? ticker.getBoundingClientRect().height : 0) + "px");
+  }
+
+  if (typeof ResizeObserver === "function") {
+    const ro = new ResizeObserver(syncStickyDashboardControls);
+    const header = document.querySelector(".gantry");
+    const subheader = document.getElementById("feed-health");
+    if (header) ro.observe(header);
+    if (subheader) ro.observe(subheader);
+    document.querySelectorAll("section.view > .ticker").forEach(t => ro.observe(t));
+  }
+  document.getElementById("view-switch")?.addEventListener("click", () => requestAnimationFrame(syncStickyDashboardControls));
+  window.addEventListener("resize", syncStickyDashboardControls);
+  window.addEventListener("load", syncStickyDashboardControls);
+  requestAnimationFrame(syncStickyDashboardControls);
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initRdwRowDrilldown, { once: true });
+  else initRdwRowDrilldown();
+})();
 </script>

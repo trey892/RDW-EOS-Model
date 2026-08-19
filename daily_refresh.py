@@ -37,6 +37,7 @@ import parse_tractor_status
 import parse_orientation
 import parse_pm_compliance
 import parse_unbilled_orders
+import derive_lease_fields
 import build_dashboard_data
 import build_asset_data
 import build_maintenance_data
@@ -69,6 +70,9 @@ def main():
     _run_optional("[3b/6] parse_orientation", parse_orientation)
     _run_optional("[3c/6] parse_pm_compliance", parse_pm_compliance)
     _run_optional("[3d/6] parse_unbilled_orders", parse_unbilled_orders)
+
+    print("\n--- derive_lease_fields ---")
+    derive_lease_fields.main()
 
     print("\n--- [4/6] build_dashboard_data ---")
     build_dashboard_data.main()

@@ -3742,35 +3742,25 @@ window.addEventListener("resize", () => {
         setTimeout(() => { exportButton.textContent = "Export CSV"; }, 2500);
       };
 
-      // Published as a Claude Artifact: frames can't trigger a browser download
-      // directly (no download permission in that sandbox) -- use the downloads
-      // capability, which shows the viewer a save confirmation instead. This
-      // artifact doesn't declare that capability (it's shared publicly, which
-      // the capability doesn't support), so `downloads` will resolve null here
-      // -- the button honestly reports itself unavailable rather than doing
-      // nothing. If the capability is ever declared, this starts working with
-      // no other changes needed.
-      if (window.claude && typeof window.claude.use === "function") {
+      // This page runs inside the Claude Artifact sandbox, which never grants
+      // frames a plain browser download -- the downloads capability (a viewer
+      // save-confirmation prompt) is the only real path, and it isn't declared
+      // here since this artifact is shared publicly (the capability doesn't
+      // support that). Report unavailable honestly rather than attempt a
+      // download that would silently do nothing for the viewer.
+      if (!window.claude || typeof window.claude.use !== "function") { flashUnavailable(); return; }
+      try {
+        const downloads = await window.claude.use("downloads");
+        if (!downloads) { flashUnavailable(); return; }
         try {
-          const downloads = await window.claude.use("downloads");
-          if (!downloads) { flashUnavailable(); return; }
-          try {
-            await downloads.save({ filename: baseName + ".csv", data: csv });
-          } catch (err) {
-            if (err && err.code === "extension_not_enabled") await downloads.save({ filename: baseName + ".txt", data: csv });
-            else if (!err || err.code !== "declined") flashUnavailable();
-          }
+          await downloads.save({ filename: baseName + ".csv", data: csv });
         } catch (err) {
-          flashUnavailable();
+          if (err && err.code === "extension_not_enabled") await downloads.save({ filename: baseName + ".txt", data: csv });
+          else if (!err || err.code !== "declined") flashUnavailable();
         }
-        return;
+      } catch (err) {
+        flashUnavailable();
       }
-
-      // Local/dev preview (not running inside the Artifact sandbox): plain download.
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = baseName + ".csv"; a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     function markDrillables(root) {

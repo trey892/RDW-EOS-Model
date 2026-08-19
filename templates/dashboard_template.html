@@ -3737,30 +3737,33 @@ window.addEventListener("resize", () => {
       const csv = [detail.columns.map(c => quote(c.label)).join(","), ...detail.visible.map(row => detail.columns.map(c => quote(c.format(row[c.key], row))).join(","))].join("\r\n");
       const baseName = norm(detail.title).replace(/ /g, "-") + "-detail";
 
+      const flashUnavailable = () => {
+        exportButton.textContent = "Export unavailable here";
+        setTimeout(() => { exportButton.textContent = "Export CSV"; }, 2500);
+      };
+
       // Published as a Claude Artifact: frames can't trigger a browser download
       // directly (no download permission in that sandbox) -- use the downloads
-      // capability, which shows the viewer a save confirmation instead.
+      // capability, which shows the viewer a save confirmation instead. This
+      // artifact doesn't declare that capability (it's shared publicly, which
+      // the capability doesn't support), so `downloads` will resolve null here
+      // -- the button honestly reports itself unavailable rather than doing
+      // nothing. If the capability is ever declared, this starts working with
+      // no other changes needed.
       if (window.claude && typeof window.claude.use === "function") {
         try {
           const downloads = await window.claude.use("downloads");
-          if (downloads) {
-            try {
-              await downloads.save({ filename: baseName + ".csv", data: csv });
-              return;
-            } catch (err) {
-              if (err && err.code === "extension_not_enabled") {
-                await downloads.save({ filename: baseName + ".txt", data: csv });
-                return;
-              }
-              if (err && err.code === "declined") return;
-              throw err;
-            }
+          if (!downloads) { flashUnavailable(); return; }
+          try {
+            await downloads.save({ filename: baseName + ".csv", data: csv });
+          } catch (err) {
+            if (err && err.code === "extension_not_enabled") await downloads.save({ filename: baseName + ".txt", data: csv });
+            else if (!err || err.code !== "declined") flashUnavailable();
           }
         } catch (err) {
-          exportButton.textContent = "Export unavailable here";
-          setTimeout(() => { exportButton.textContent = "Export CSV"; }, 2500);
-          return;
+          flashUnavailable();
         }
+        return;
       }
 
       // Local/dev preview (not running inside the Artifact sandbox): plain download.

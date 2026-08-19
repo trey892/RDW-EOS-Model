@@ -1117,6 +1117,11 @@ const UNBILLED_ORDER_DATA = /*__UNBILLED_ORDER_DATA__*/;
 const SOURCE_DATA = /*__SOURCE_DATA__*/;
 const REVENUE_MODULE_HTML = /*__REVENUE_MODULE_HTML__*/;
 
+// Static source-document links (fixed URLs, not generated per-request) -- verified
+// directly against the prior fleet-site dashboard's own source, not guessed.
+const DOWN_REPORT_SOURCE_URL = "https://robbiedwood-my.sharepoint.com/:x:/g/personal/trey_robbiedwood_onmicrosoft_com/IQAVsWer94RiRqDZsTxL2jgrAZSE_q2xnHxQ7lzbEtT5TA4?e=vgVrNB";
+const ORIENTATION_SOURCE_URL = (SOURCE_DATA?.files || []).find(f => f.name === "Orientation.xlsm")?.url || "https://drive.google.com/drive/folders/1uD98KZD7BaTsqCfclRKtBI7lwTgoH9a3";
+
 const fmtUSD = (v) => v == null ? "—" : (Math.abs(v) >= 1000 ? "$" + Math.round(v / 1000).toLocaleString() + "k" : "$" + Math.round(v).toLocaleString());
 const fmtUSDFull = (v) => v == null ? "—" : "$" + Math.round(v).toLocaleString();
 const fmtNum = (v, d = 0) => v == null ? "—" : v.toLocaleString(undefined, {maximumFractionDigits: d, minimumFractionDigits: d});
@@ -1488,10 +1493,10 @@ function groupBy(rows, key) {
 }
 
 const unbilledSortState = {key: "terminal", dir: 1};
-const rtdAvailabilityFilters = {assignedDriver: "", status: "", style: ""};
+const rtdAvailabilityFilters = {sheetStatus: "", status: "", style: ""};
 function buildRtdAvailabilityFilters(allUnits, visibleCount) {
   const controls = [
-    {key: "assignedDriver", label: "Assigned Driver", allLabel: "All assigned drivers"},
+    {key: "sheetStatus", label: "Sheet Status", allLabel: "All sheet statuses"},
     {key: "status", label: "RTD Status", allLabel: "All RTD statuses"},
     {key: "style", label: "Style", allLabel: "All styles"},
   ];
@@ -1602,7 +1607,7 @@ function renderCharts(rows) {
   grid.appendChild(pReadiness);
 
   /* Panel: Orientation Inbound -- next scheduled class, real source: Orientation.xlsm */
-  const pOrientation = panel("Orientation Inbound", "next scheduled class &middot; all fleets", "orientation-svg-unused");
+  const pOrientation = panel("Orientation Inbound", `next scheduled class &middot; all fleets &middot; <a class="source-open" href="${ORIENTATION_SOURCE_URL}" target="_blank" rel="noopener noreferrer">Open Orientation Roster &#8599;</a>`, "orientation-svg-unused");
   pOrientation.classList.add("orientation-panel");
   pOrientation.querySelector("svg").remove();
   const orientFleets = ORIENTATION_DATA?.fleets || [];
@@ -1636,7 +1641,7 @@ function renderCharts(rows) {
     .map(t => {
       const availabilityClass = t.downStatus != null ? "repair" : t.dispatchStatus === "SPARE" ? "spare" : "open";
       const availabilityLabel = availabilityClass === "repair" ? "Pending Repairs" : availabilityClass === "spare" ? "Spare Units" : "Open / Not Seated";
-      return {assetId: t.assetId, fleetCode: t.terminal, status: t.dispatchStatus, sheetStatus: t.rawSheetStatus, assignedDriver: t.assignedDriverRaw, style: t.style || "Unclassified", availabilityClass, availabilityLabel};
+      return {assetId: t.assetId, fleetCode: t.terminal, status: t.dispatchStatus, sheetStatus: t.rawSheetStatus, assignedDriver: t.assignedDriverRaw, style: t.styleKey || "Unclassified", availabilityClass, availabilityLabel};
     })
     .sort((a, b) => {
       const order = {open: 0, spare: 1, repair: 2};
@@ -1659,7 +1664,7 @@ function renderCharts(rows) {
   if (rtdUnits.length) {
     const rtdWrap = document.createElement("div");
     rtdWrap.className = "table-wrap rtd-availability-table";
-    rtdWrap.innerHTML = `<table class="data-table"><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>RTD Status</th><th>Sheet Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.status || "—")}</td><td>${escapeHtml(u.sheetStatus || "blank")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
+    rtdWrap.innerHTML = `<table class="data-table"><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>Sheet Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.sheetStatus || "blank")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
     pAvail.appendChild(rtdWrap);
   } else {
     const empty = document.createElement("div");
@@ -1705,7 +1710,7 @@ function renderCharts(rows) {
      moment), so this report catches down trucks RTD PENDING alone misses. */
   const pendingRows = rows.filter(t => t.downStatus != null)
     .sort((a, b) => (b.downDays || 0) - (a.downDays || 0));
-  const pPending = panel("Pending Tractors", "down for repair &mdash; Down Report", "pending-svg-unused");
+  const pPending = panel("Pending Tractors", `down for repair &mdash; Down Report &middot; <a class="source-open" href="${DOWN_REPORT_SOURCE_URL}" target="_blank" rel="noopener noreferrer">Open Down Report &#8599;</a>`, "pending-svg-unused", true);
   pPending.querySelector("svg").remove();
   grid.appendChild(pPending);
   const pendingTableWrap = document.createElement("div");
@@ -3568,7 +3573,7 @@ window.addEventListener("resize", () => {
     const col = (key, label, format) => ({ key, label, format: format || (v => v == null || v === "" ? "—" : String(v)) });
 
     const fleetColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("division","Division"),col("ownership","Ownership"),col("dispatchStatus","RTD Status"),col("revenue","Revenue",money),col("contribution","Contribution",money),col("deadheadPct","Deadhead",pctFmt),col("annualizedDistance","Annualized Miles",number)];
-    const rtdAvailabilityColumns = [col("assetId","Tractor"),col("fleetCode","Fleet"),col("status","RTD Status"),col("sheetStatus","Sheet Status"),col("assignedDriver","Assigned Driver"),col("style","Style")];
+    const rtdAvailabilityColumns = [col("assetId","Tractor"),col("fleetCode","Fleet"),col("sheetStatus","Sheet Status"),col("assignedDriver","Assigned Driver"),col("style","Style")];
     const assetColumns = [col("assetId","Asset"),col("assetType","Type",v => ASSET_TYPE_LABEL[v] || v || "—"),col("ownership","Ownership"),col("division","Division"),col("terminal","Terminal"),col("year","Year"),col("netBookValue","Net Book Value",money)];
     const leaseColumns = [col("assetId","Unit"),col("assetType","Type",v => ASSET_TYPE_LABEL[v] || v || "—"),col("year","Year"),col("owner","Owner"),col("insuredValue","Insured Value",money),col("_pd","Monthly PD",(v,row) => { const m = pdInsuranceMonthly(row); return m == null ? "—" : fmtUSDFull(m); }),col("monthlyLeaseRate","Monthly Lease",money),col("lessor","Lessor")];
     const trailerColumns = [col("assetId","Unit"),col("_type","Equipment Type",(v,row) => TRAILER_MASTER_TYPE_LABELS[trailerMasterType(row)] || trailerMasterType(row) || "Unclassified"),col("_fleet","Fleet",(v,row) => trailerMasterFleet(row)),col("_owner","Owner",(v,row) => trailerMasterOwner(row)),col("_status","Status",(v,row) => trailerMasterStatus(row)),col("year","Year"),col("make","Make"),col("insuredValue","Insured Value",money)];

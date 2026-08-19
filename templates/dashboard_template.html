@@ -1534,6 +1534,29 @@ function renderCharts(rows) {
   pAvail.appendChild(rtdNote);
   grid.appendChild(pAvail);
 
+  /* Panel: PACCAR Lease Turn-In Status. Data gap, stated honestly: the manual
+     list of 8 flagged units has no inspection/repair-status data behind it
+     (maturity dates are all null, pending PACCAR's own confirmation per
+     data/raw/paccar_lease_units.json's own note) -- the rich version of this
+     panel (stage, due dates, repair counts) needs a real PACCAR export or
+     portal feed that doesn't exist yet. Shown here is only what's actually
+     known: which units are flagged, and their terminal/style from the RTD
+     pull, rather than fabricating status fields. */
+  const paccarUnits = rows.filter(t => t.isPaccarLease);
+  if (paccarUnits.length) {
+    const pPaccar = panel("PACCAR Lease Turn-In Status", "flagged units &middot; inspection/repair status not yet available", "paccar-svg-unused", true);
+    pPaccar.querySelector("svg").remove();
+    const paccarNote = document.createElement("div");
+    paccarNote.className = "panel-note";
+    paccarNote.innerHTML = `<strong>Data gap:</strong> maturity dates and inspection/repair status are pending a real PACCAR export or portal feed -- currently just a manually flagged unit list (see data/raw/paccar_lease_units.json).`;
+    pPaccar.appendChild(paccarNote);
+    const paccarWrap = document.createElement("div");
+    paccarWrap.className = "table-wrap";
+    paccarWrap.innerHTML = `<table class="data-table"><thead><tr><th>Tractor #</th><th>Terminal</th><th>Style</th><th>Maturity Date</th></tr></thead><tbody>${paccarUnits.map(t => `<tr><td class="mono"><strong>${t.assetId}</strong></td><td>${t.terminal || "—"}</td><td>${t.styleKey || "—"}</td><td>${t.paccarMaturityDate || "Pending PACCAR confirmation"}</td></tr>`).join("")}</tbody></table>`;
+    pPaccar.appendChild(paccarWrap);
+    grid.appendChild(pPaccar);
+  }
+
   /* Panel: Pending tractors -- out of service / down for repair, beside
      Available. Sourced from the Down Report's "Down Equipment" tab (Down
      Days, Status, Location, Issue, ETA), NOT just the RTD PENDING code --

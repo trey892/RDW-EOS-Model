@@ -42,6 +42,7 @@ OPTIONAL_PLACEHOLDERS = {
     "/*__ORIENTATION_DATA__*/": (OUT_DIR / "orientation_data.json", {"classDate": None, "classDateLabel": None, "driverCount": 0, "drivers": [], "fleets": []}),
     "/*__PM_COMPLIANCE_DATA__*/": (OUT_DIR / "pm_compliance_data.json", {"dateRange": None, "reportDate": None, "vehicles": []}),
     "/*__UNBILLED_ORDER_DATA__*/": (OUT_DIR / "unbilled_orders_data.json", {"checkedAt": None, "orderCount": 0, "totalCharges": 0, "rows": []}),
+    "/*__SOURCE_DATA__*/": (OUT_DIR / "sources_data.json", {"checkedAt": None, "files": []}),
 }
 
 

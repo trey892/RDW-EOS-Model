@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>RDW Fleet Operations</title>
 <style>
   :root {
@@ -395,6 +396,92 @@
   @media (max-width: 640px) {
     .theme-note { display: none; }
   }
+
+  /* ---------------- Executive Overview ---------------- */
+  .executive-shell { padding:18px clamp(16px,4vw,40px) 42px; display:grid; gap:14px; }
+  .executive-callout { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:18px 20px; border:1px solid var(--border); border-left:5px solid var(--accent); border-radius:11px; background:linear-gradient(120deg,var(--accent-wash),var(--surface) 55%); }
+  .executive-callout h2 { margin:0 0 5px; font-size:20px; }
+  .executive-callout p { margin:0; max-width:76ch; color:var(--ink-2); font-size:12px; line-height:1.55; }
+  .executive-actions { display:flex; gap:7px; flex-wrap:wrap; }
+  .executive-action { appearance:none; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); padding:8px 11px; font:inherit; font-size:11px; font-weight:800; cursor:pointer; }
+  .executive-action:hover { border-color:var(--accent); color:var(--accent); }
+  .executive-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:1px; overflow:hidden; border:1px solid var(--border); border-radius:11px; background:var(--border); }
+  .executive-kpi { min-width:0; padding:15px 16px; background:var(--surface); }
+  .executive-kpi-label { color:var(--muted); font-size:9.5px; font-weight:850; letter-spacing:.075em; text-transform:uppercase; }
+  .executive-kpi-value { margin-top:5px; color:var(--ink); font:800 clamp(22px,2.6vw,30px)/1 ui-monospace,monospace; }
+  .executive-kpi-value.good { color:var(--good); } .executive-kpi-value.warn { color:var(--warning); } .executive-kpi-value.critical { color:var(--critical); }
+  .executive-kpi-sub { margin-top:5px; color:var(--ink-2); font-size:10.5px; line-height:1.35; }
+  .executive-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr); gap:14px; }
+  .executive-card { min-width:0; padding:16px 18px; border:1px solid var(--border); border-radius:11px; background:var(--surface); }
+  .executive-card.wide { grid-column:1/-1; }
+  .executive-card-head { display:flex; justify-content:space-between; gap:12px; align-items:baseline; margin-bottom:10px; }
+  .executive-card-title { font-size:13px; font-weight:850; } .executive-card-note { color:var(--muted); font-size:10.5px; }
+  .executive-alerts { display:grid; gap:7px; }
+  .executive-alert { display:grid; grid-template-columns:10px minmax(0,1fr) auto; align-items:center; gap:9px; padding:8px 9px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
+  .executive-alert-dot { width:8px; height:8px; border-radius:50%; background:var(--good); } .executive-alert-dot.warn { background:var(--warning); } .executive-alert-dot.critical { background:var(--critical); }
+  .executive-alert-main { color:var(--ink); font-size:11.5px; font-weight:750; } .executive-alert-sub { color:var(--muted); font-size:10px; font-weight:500; }
+  .executive-alert-value { color:var(--ink); font:800 14px/1 ui-monospace,monospace; white-space:nowrap; }
+  .executive-source-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:7px; }
+  .executive-source { padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
+  .executive-source-name { font-size:10px; font-weight:850; text-transform:uppercase; letter-spacing:.06em; }
+  .executive-source-state { margin-top:4px; color:var(--muted); font-size:10px; }
+  @media (max-width:900px) { .executive-grid { grid-template-columns:1fr; } }
+  @media (max-width:640px) { .executive-source-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .executive-actions { width:100%; } .executive-action { flex:1; } }
+
+  /* ---------------- Source Worksheets + feed-health header strip ---------------- */
+  .feed-health {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:9px clamp(16px,4vw,40px); border-bottom:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-2); font-size:10.5px;
+  }
+  .feed-health-label { font-weight:850; letter-spacing:.07em; text-transform:uppercase; color:var(--ink); margin-right:2px; }
+  .feed-health-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border:1px solid var(--border); border-radius:999px; background:var(--surface); }
+  .feed-health-chip::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--warning); }
+  .feed-health-chip.current::before { background:var(--good); }
+  .feed-health-chip.changed::before { background:var(--critical); }
+  .feed-health-chip.stale::before { background:var(--warning); }
+  .feed-health-mode { margin-left:auto; color:var(--muted); }
+  .source-workspace { padding:20px clamp(16px,4vw,40px) 42px; }
+  .source-intro {
+    display:flex; align-items:flex-start; justify-content:space-between; gap:18px; flex-wrap:wrap;
+    margin-bottom:16px; padding:18px 20px; border:1px solid var(--border); border-left:4px solid var(--accent);
+    border-radius:10px; background:var(--surface);
+  }
+  .source-intro h2 { margin:0 0 5px; font-size:17px; }
+  .source-intro p { margin:0; max-width:74ch; color:var(--ink-2); font-size:12.5px; line-height:1.55; }
+  .source-folder-links { display:flex; gap:8px; flex-wrap:wrap; }
+  .source-folder-link, .source-open {
+    display:inline-flex; align-items:center; justify-content:center; gap:7px; text-decoration:none;
+    border:1px solid var(--accent); border-radius:8px; background:var(--accent); color:var(--accent-ink);
+    padding:8px 12px; font-size:11.5px; font-weight:800;
+  }
+  .source-folder-link:hover, .source-open:hover { opacity:.88; }
+  .source-folder-link:focus-visible, .source-open:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+  .source-summary { margin:0 0 14px; color:var(--ink-2); font-size:12px; }
+  .source-groups { display:grid; gap:18px; }
+  .source-group { min-width:0; }
+  .source-group-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 9px; }
+  .source-group-title { margin:0; font-size:13px; text-transform:uppercase; letter-spacing:.07em; }
+  .source-group-count { color:var(--muted); font-size:11px; }
+  .source-card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:11px; }
+  .source-card {
+    min-width:0; display:flex; flex-direction:column; gap:10px; padding:14px;
+    border:1px solid var(--border); border-radius:10px; background:var(--surface);
+  }
+  .source-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .source-card-name { margin:0; color:var(--ink); font-size:13px; line-height:1.35; overflow-wrap:anywhere; }
+  .source-kind { flex:none; color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+  .source-card-meta { display:grid; gap:3px; color:var(--ink-2); font-size:11px; line-height:1.4; }
+  .source-card-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:auto; }
+  .source-sync { display:inline-flex; align-items:center; gap:6px; color:var(--ink-2); font-size:10.5px; font-weight:750; }
+  .source-sync::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--warning); }
+  .source-sync.current::before { background:var(--good); }
+  .source-loading { padding:28px; border:1px dashed var(--border); border-radius:10px; color:var(--muted); text-align:center; }
+  @media (max-width:640px) {
+    .feed-health-mode { width:100%; margin-left:0; }
+    .source-workspace { padding-top:14px; }
+    .source-folder-links, .source-folder-link { width:100%; }
+  }
 </style>
 
 <header class="gantry">
@@ -406,15 +493,66 @@
     </div>
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
       <div class="view-switch" id="view-switch" role="tablist" aria-label="Dashboard view">
+        <button class="pill" data-view="overview" role="tab">Executive Overview</button>
         <button class="pill" data-view="fleet" role="tab">Fleet Operations</button>
         <button class="pill" data-view="assets" role="tab">Asset Inventory</button>
+        <button class="pill" data-view="trailers" role="tab">Trailer Master</button>
         <button class="pill" data-view="maintenance" role="tab">Maintenance</button>
-        <button class="pill" data-view="lease" role="tab">Insured &amp; Leased</button>
+        <button class="pill" data-view="insurance" role="tab">Insurance</button>
+        <button class="pill" data-view="lease" role="tab">Leased Equipment</button>
+        <button class="pill" data-view="revenue" role="tab">RDW Revenue</button>
+        <button class="pill" data-view="sources" role="tab">Source Worksheets</button>
       </div>
       <div class="theme-note" id="theme-note">Revenue confidence varies by unit &mdash; see chip on each figure</div>
     </div>
   </div>
 </header>
+
+<div class="feed-health" id="feed-health" role="status" aria-live="polite">
+  <span class="feed-health-label">Data feeds</span>
+  <span class="feed-health-chip" data-feed="synced">Shared Sheets checking</span>
+  <span class="feed-health-chip" data-feed="rta">RTA checking</span>
+  <span class="feed-health-chip" data-feed="mcleod">McLeod checking</span>
+  <span class="feed-health-chip" data-feed="samsara">Samsara checking</span>
+  <span class="feed-health-chip" data-feed="drops">Direct drops checking</span>
+  <span class="feed-health-mode">Published snapshot</span>
+</div>
+
+<section class="view" id="view-overview" style="display:none">
+  <main class="executive-shell">
+    <div class="executive-callout">
+      <div>
+        <h2>RDW Executive Operating Picture</h2>
+        <p>One screen for the decisions that cannot wait: capacity, downtime, billing exposure, maintenance risk, inbound drivers, and fixed fleet cost. Each operating tab remains available for the full drill-down.</p>
+      </div>
+      <div class="executive-actions">
+        <button class="executive-action" type="button" data-executive-view="fleet">Fleet detail</button>
+        <button class="executive-action" type="button" data-executive-view="maintenance">Maintenance detail</button>
+        <button class="executive-action" type="button" data-executive-view="sources">Source health</button>
+      </div>
+    </div>
+    <div class="executive-kpis" id="executive-kpis"></div>
+    <div class="executive-grid">
+      <section class="executive-card">
+        <div class="executive-card-head"><div class="executive-card-title">Operating alerts</div><div class="executive-card-note">highest-action items first</div></div>
+        <div class="executive-alerts" id="executive-alerts"></div>
+      </section>
+      <section class="executive-card">
+        <div class="executive-card-head"><div class="executive-card-title">Source lanes</div><div class="executive-card-note">as of last refresh</div></div>
+        <div class="executive-source-grid" id="executive-source-grid"><div class="source-loading">Loading…</div></div>
+      </section>
+      <section class="executive-card wide">
+        <div class="executive-card-head"><div class="executive-card-title">Terminal operating picture</div><div class="executive-card-note">tractors, availability, downtime, and unbilled exposure</div></div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Terminal</th><th>Tractors</th><th>Available</th><th>Down</th><th>Unbilled Orders</th><th>Unbilled Charges</th></tr></thead>
+            <tbody id="executive-terminal-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</section>
 
 <section class="view" id="view-fleet">
   <div class="ticker" id="ticker"></div>
@@ -627,6 +765,28 @@
   </div>
 </section>
 
+<section class="view" id="view-sources" style="display:none">
+  <main class="source-workspace">
+    <div class="source-intro">
+      <div>
+        <h2>Live RDW source control</h2>
+        <p>The source catalog reads the newest valid report family from each connected source: Shared Sheets Sync, the RTA and McLeod report inboxes, and Gmail (for reports not yet routed to Drive). Samsara, fuel-card, and lease-invoice sources are mapped but not yet feeding a live parser. Each card shows the report's own as-of date, not just when it landed in Drive, so staleness is visible rather than assumed.</p>
+      </div>
+      <div class="source-folder-links">
+        <a class="source-folder-link" href="https://drive.google.com/drive/folders/1uD98KZD7BaTsqCfclRKtBI7lwTgoH9a3" target="_blank" rel="noopener noreferrer">Shared Sheets Sync &#8599;</a>
+        <a class="source-folder-link" href="https://drive.google.com/drive/folders/1YlR0efDJstVmmpInbyG6KCIuxO-I1IDF" target="_blank" rel="noopener noreferrer">RTA Reports Inbox &#8599;</a>
+        <a class="source-folder-link" href="https://drive.google.com/drive/folders/1oGIyA_0U6XLYjmv3mVadsH3xIYbkVh5k" target="_blank" rel="noopener noreferrer">McLeod Reports Inbox &#8599;</a>
+      </div>
+    </div>
+    <div class="source-summary" id="source-summary">Loading source worksheets&hellip;</div>
+    <div class="source-groups" id="source-groups"><div class="source-loading">Loading source worksheets&hellip;</div></div>
+    <section class="panel wide" style="margin-top:16px;">
+      <div class="panel-title">Metric Source Map</div>
+      <p class="panel-note" style="margin-top:8px;">Live and automated: RTD tractor listing (dispatch status, style, hub mileage), RTA PM Due, RTA PM Compliance, Orientation, Down Report, Unbilled Orders. Mapped but awaiting a validated parser: Samsara idle events and fuel efficiency, invoiced fuel-card history (refreshed by hand), McLeod driver revenue, Transafe insurance schedule. Nothing here silently overwrites a metric until its source data actually reconciles with what's shown.</p>
+    </section>
+  </main>
+</section>
+
 <div class="tooltip" id="tooltip"></div>
 
 <script>
@@ -637,6 +797,7 @@ const LEASE_DATA = /*__LEASE_DATA__*/;
 const ORIENTATION_DATA = /*__ORIENTATION_DATA__*/;
 const PM_COMPLIANCE_DATA = /*__PM_COMPLIANCE_DATA__*/;
 const UNBILLED_ORDER_DATA = /*__UNBILLED_ORDER_DATA__*/;
+const SOURCE_DATA = /*__SOURCE_DATA__*/;
 
 const fmtUSD = (v) => v == null ? "—" : (Math.abs(v) >= 1000 ? "$" + Math.round(v / 1000).toLocaleString() + "k" : "$" + Math.round(v).toLocaleString());
 const fmtUSDFull = (v) => v == null ? "—" : "$" + Math.round(v).toLocaleString();
@@ -2081,16 +2242,163 @@ function updateLease() {
   });
 }
 
+/* ---------------- Executive Overview ---------------- */
+function executiveTerminal(row) { return String(row.terminal || row.fleetCode || "UNK"); }
+// "Available" = uncommitted, ready-to-dispatch trucks. Matched against the actual RTD
+// SOP status codes (AVAILABL, SPARE), not a loose /available/ regex -- that regex never
+// matches "AVAILABL" since the SOP code is missing its final "e" and can't contain the
+// full word "available" as a substring. Caught 2026-08-19 (was silently showing 0).
+function isAvailableStatus(status) { return status === "AVAILABL" || status === "SPARE"; }
+
+function renderExecutiveOverview() {
+  const tractors = Array.isArray(DATA?.tractors) ? DATA.tractors : [];
+  const downRows = tractors.filter(t => t.downStatus != null);
+  const unbilled = Array.isArray(UNBILLED_ORDER_DATA?.rows) ? UNBILLED_ORDER_DATA.rows : [];
+  const pmDue = Array.isArray(MAINT_DATA?.pmDue) ? MAINT_DATA.pmDue : [];
+  const available = tractors.filter(t => isAvailableStatus(t.dispatchStatus)).length;
+  const downSeven = downRows.filter(t => Number(t.downDays || 0) >= 7).length;
+  const missingEta = downRows.filter(t => !t.downEtaCompletion).length;
+  const unbilledOrders = unbilled.reduce((sum, r) => sum + Number(r.uniqueOrders || r.orders || 0), 0);
+  const unbilledCharges = unbilled.reduce((sum, r) => sum + Number(r.totalCharges || 0), 0);
+  const pmPastDue = pmDue.filter(r => r.dueStatus === "Past Due").length;
+  const nextClass = ORIENTATION_DATA?.classDateLabel || "Not scheduled";
+  const inbound = Array.isArray(ORIENTATION_DATA?.drivers) ? ORIENTATION_DATA.drivers.length : 0;
+  const leasedUnits = (LEASE_DATA?.units || []).filter(u => u.monthlyLeaseRate);
+  const monthlyBaseLease = leasedUnits.reduce((sum, u) => sum + Number(u.monthlyLeaseRate || 0), 0);
+
+  const kpis = [
+    ["Available trucks", fmtNum(available), "of " + fmtNum(tractors.length) + " active tractors", available ? "good" : "critical"],
+    ["Down now", fmtNum(downRows.length), fmtNum(downSeven) + " down 7+ days", downRows.length ? "critical" : "good"],
+    ["Unbilled orders", fmtNum(unbilledOrders), fmtUSDFull(unbilledCharges) + " current report", unbilledOrders ? "warn" : "good"],
+    ["Past-due PMs", fmtNum(pmPastDue), fmtNum(pmDue.length) + " PM items reviewed", pmPastDue ? "critical" : "good"],
+    ["Next orientation", nextClass, fmtNum(inbound) + " inbound drivers", inbound ? "" : "warn"],
+    ["Monthly base lease", fmtUSD(monthlyBaseLease), fmtNum(leasedUnits.length) + " active leased units", ""],
+  ];
+  document.getElementById("executive-kpis").innerHTML = kpis.map(r =>
+    `<div class="executive-kpi"><div class="executive-kpi-label">${r[0]}</div><div class="executive-kpi-value ${r[3]}">${r[1]}</div><div class="executive-kpi-sub">${r[2]}</div></div>`
+  ).join("");
+
+  const alerts = [
+    [downSeven ? "critical" : "", "Long-term downtime", "tractors down at least seven days", fmtNum(downSeven)],
+    [missingEta ? "warn" : "", "Repair ETAs missing", "down tractors without a completion estimate", fmtNum(missingEta)],
+    [pmPastDue ? "critical" : "", "Preventive maintenance overdue", "past-due PM line items", fmtNum(pmPastDue)],
+    [unbilledOrders ? "warn" : "", "Billing exposure", "latest unbilled snapshot, all terminals", fmtUSD(unbilledCharges)],
+    [inbound ? "" : "warn", "Orientation inbound", nextClass + (ORIENTATION_DATA?.fleets?.length ? " · " + ORIENTATION_DATA.fleets.map(f => f.fleet + " " + f.count).join(" · ") : ""), fmtNum(inbound)],
+  ];
+  document.getElementById("executive-alerts").innerHTML = alerts.map(r =>
+    `<div class="executive-alert"><span class="executive-alert-dot ${r[0]}"></span><span class="executive-alert-main">${r[1]}<span class="executive-alert-sub"><br>${r[2]}</span></span><span class="executive-alert-value">${r[3]}</span></div>`
+  ).join("");
+
+  const terminalMap = new Map();
+  const ensure = t => { if (!terminalMap.has(t)) terminalMap.set(t, {terminal: t, tractors: 0, available: 0, down: 0, orders: 0, charges: 0}); return terminalMap.get(t); };
+  tractors.forEach(t => { const g = ensure(executiveTerminal(t)); g.tractors += 1; if (isAvailableStatus(t.dispatchStatus)) g.available += 1; });
+  downRows.forEach(t => ensure(executiveTerminal(t)).down += 1);
+  unbilled.forEach(r => { const g = ensure(r.terminal || "UNK"); g.orders += Number(r.uniqueOrders || r.orders || 0); g.charges += Number(r.totalCharges || 0); });
+  const terminalRows = Array.from(terminalMap.values()).filter(r => r.terminal && r.terminal !== "UNK").sort((a, b) => b.down - a.down || b.orders - a.orders || a.terminal.localeCompare(b.terminal));
+  document.getElementById("executive-terminal-body").innerHTML = terminalRows.map(r =>
+    `<tr><td><strong>${r.terminal}</strong></td><td class="num">${fmtNum(r.tractors)}</td><td class="num">${fmtNum(r.available)}</td><td class="num">${fmtNum(r.down)}</td><td class="num">${fmtNum(r.orders)}</td><td class="num">${r.charges ? fmtUSDFull(r.charges) : "—"}</td></tr>`
+  ).join("");
+
+  if (Array.isArray(SOURCE_DATA?.files)) renderExecutiveSourceHealth(SOURCE_DATA.files);
+}
+
+function renderExecutiveSourceHealth(files) {
+  const buckets = ["synced", "rta", "mcleod", "samsara"];
+  const labels = {synced: "Shared Sheets", rta: "RTA", mcleod: "McLeod", samsara: "Samsara"};
+  const host = document.getElementById("executive-source-grid");
+  if (!host) return;
+  host.innerHTML = buckets.map(bucket => {
+    const rows = files.filter(f => f.bucket === bucket);
+    const changed = rows.filter(f => f.dashboardFeed && !f.dashboardCurrent).length;
+    const state = rows.length ? (changed ? changed + " changed" : rows.length + " current") : "no live parser";
+    return `<div class="executive-source"><div class="executive-source-name">${labels[bucket]}</div><div class="executive-source-state">${state}</div></div>`;
+  }).join("");
+}
+
+document.querySelectorAll("[data-executive-view]").forEach(b => b.addEventListener("click", () => setView(b.dataset.executiveView)));
+
+/* ---------------- Source Worksheets ---------------- */
+const escapeHtml = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+const sourceLabels = {synced: "Shared Sheets Sync", rta: "RTA Reports Inbox", mcleod: "McLeod Reports Inbox", samsara: "Samsara Reports Inbox"};
+const feedNames = {synced: "Shared Sheets", rta: "RTA", mcleod: "McLeod", samsara: "Samsara"};
+const staleAfterHoursByBucket = {synced: 48, rta: 48, mcleod: 48, samsara: 48};
+
+function fileReportAgeHours(file) {
+  const ts = Date.parse(file?.reportTimestamp || file?.modifiedTime || "");
+  return Number.isFinite(ts) ? Math.max(0, (Date.now() - ts) / 3600000) : null;
+}
+
+function updateFeedHealth(files) {
+  const byBucket = {};
+  files.forEach(f => { (byBucket[f.bucket] ||= []).push(f); });
+  const shortDate = new Intl.DateTimeFormat("en-US", {month: "short", day: "numeric", timeZone: "America/Chicago"});
+  ["synced", "rta", "mcleod", "samsara"].forEach(bucket => {
+    const chip = document.querySelector(`[data-feed="${bucket}"]`);
+    if (!chip) return;
+    const rows = byBucket[bucket] || [];
+    const changed = rows.filter(f => !f.dashboardCurrent).length;
+    const latest = rows.reduce((max, f) => { const t = Date.parse(f.reportTimestamp || f.modifiedTime || ""); return Number.isFinite(t) && t > max ? t : max; }, 0);
+    const stale = rows.length > 0 && latest > 0 && Date.now() - latest > staleAfterHoursByBucket[bucket] * 3600000;
+    chip.classList.toggle("current", rows.length > 0 && changed === 0 && !stale);
+    chip.classList.toggle("changed", changed > 0 && !stale);
+    chip.classList.toggle("stale", stale);
+    const familyCount = rows.length + (rows.length === 1 ? " family" : " families");
+    chip.textContent = !rows.length ? feedNames[bucket] + " · no live parser"
+      : stale ? feedNames[bucket] + " " + familyCount + " · stale since " + shortDate.format(new Date(latest))
+      : feedNames[bucket] + " " + familyCount + (changed ? " · " + changed + " changed" : " · current");
+  });
+  const chip = document.querySelector('[data-feed="drops"]');
+  if (chip) chip.textContent = "Direct drops · not in use";
+}
+
+function sourceCard(file) {
+  const modified = file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : "Unknown";
+  const reportTime = file.reportTimestamp ? new Date(file.reportTimestamp).toLocaleString() : null;
+  const age = fileReportAgeHours(file);
+  const stale = age != null && age > (staleAfterHoursByBucket[file.bucket] || 168);
+  const isCurrent = !stale && file.dashboardCurrent;
+  const syncText = stale ? "Stale source — check upstream" : (file.dashboardCurrent ? "Current in dashboard" : "Refresh needed");
+  return `<article class="source-card">
+    <div class="source-card-top"><h3 class="source-card-name">${escapeHtml(file.name)}</h3><span class="source-kind">${escapeHtml(file.kind)}</span></div>
+    <div class="source-card-meta">
+      ${reportTime ? `<span>Report as-of: <span class="mono">${escapeHtml(reportTime)}${stale ? " · STALE " + Math.floor(age / 24) + "d" : ""}</span></span>` : ""}
+      <span>Drive/local modified: <span class="mono">${escapeHtml(modified)}</span></span>
+    </div>
+    <div class="source-card-actions"><span class="source-sync${isCurrent ? " current" : ""}">${syncText}</span>
+    ${file.url ? `<a class="source-open" href="${escapeHtml(file.url)}" target="_blank" rel="noopener noreferrer">Open source &#8599;</a>` : ""}</div>
+  </article>`;
+}
+
+function renderStaticSources() {
+  const files = Array.isArray(SOURCE_DATA?.files) ? SOURCE_DATA.files : [];
+  const checkedAt = SOURCE_DATA?.checkedAt;
+  const sourceGroups = document.getElementById("source-groups");
+  const sourceSummary = document.getElementById("source-summary");
+  if (!sourceGroups || !sourceSummary) return;
+  updateFeedHealth(files);
+  renderExecutiveSourceHealth(files);
+  const changed = files.filter(f => f.dashboardFeed && !f.dashboardCurrent).length;
+  sourceSummary.textContent = `${files.length} current source families · ${changed} changed` + (checkedAt ? ` · as of ${new Date(checkedAt).toLocaleString()}` : "");
+  sourceGroups.innerHTML = ["synced", "rta", "mcleod", "samsara"].map(bucket => {
+    const rows = files.filter(f => f.bucket === bucket);
+    if (!rows.length) return `<section class="source-group"><div class="source-group-head"><h3 class="source-group-title">${sourceLabels[bucket] || bucket}</h3><span class="source-group-count">no live parser yet</span></div></section>`;
+    return `<section class="source-group"><div class="source-group-head"><h3 class="source-group-title">${sourceLabels[bucket]}</h3><span class="source-group-count">${rows.length} file${rows.length === 1 ? "" : "s"}</span></div><div class="source-card-grid">${rows.map(sourceCard).join("")}</div></section>`;
+  }).join("");
+}
+
 /* ---------------- View switch ---------------- */
+const ALL_VIEWS = ["overview", "fleet", "assets", "trailers", "maintenance", "insurance", "lease", "revenue", "sources"];
 let currentView = "fleet";
 function setView(view) {
   currentView = view;
-  document.getElementById("view-fleet").style.display = view === "fleet" ? "" : "none";
-  document.getElementById("view-assets").style.display = view === "assets" ? "" : "none";
-  document.getElementById("view-maintenance").style.display = view === "maintenance" ? "" : "none";
-  document.getElementById("view-lease").style.display = view === "lease" ? "" : "none";
+  ALL_VIEWS.forEach(v => { const el = document.getElementById("view-" + v); if (el) el.style.display = v === view ? "" : "none"; });
   document.querySelectorAll("#view-switch .pill").forEach(b => b.setAttribute("aria-pressed", b.dataset.view === view ? "true" : "false"));
-  if (view === "fleet") {
+  if (view === "overview") {
+    document.getElementById("page-title").textContent = "Executive Overview";
+    document.getElementById("page-meta").innerHTML = "Capacity, downtime, billing, maintenance, orientation, and lease exposure in one operating picture.";
+    document.getElementById("theme-note").textContent = "Use the operating tabs for detail; use Source Worksheets to verify freshness";
+    renderExecutiveOverview();
+  } else if (view === "fleet") {
     document.getElementById("page-title").textContent = "Fleet Operations Dashboard";
     const versionText = DATA.meta.modelVersion != null
       ? `v${DATA.meta.modelVersion}, refreshed ${DATA.meta.lastRefreshed || "—"}`
@@ -2108,11 +2416,16 @@ function setView(view) {
     document.getElementById("page-meta").innerHTML = `<span class="mono">${MAINT_DATA.meta.workOrderCount}</span> tractor work orders, <span class="mono">${MAINT_DATA.meta.dateRange.join(" to ")}</span>, from <span class="mono">Fact_Maintenance_WO</span> (RTA), plus <span class="mono">${MAINT_DATA.meta.pmDueCount}</span> PM due items (<span class="mono">${MAINT_DATA.meta.pmDuePastDueCount}</span> past due) &mdash; automated daily pull, last refreshed <span class="mono">${MAINT_DATA.meta.pmDueSource.match(/last refreshed ([\d-]+)/)?.[1] ?? "unknown"}</span>.`;
     document.getElementById("theme-note").textContent = "Cost/mile excludes tractors below " + MIN_ANNUAL_MILES.toLocaleString() + " annualized miles (unreliable ratio)";
     renderMaintCharts(filteredMaintTractors(), filteredWorkOrders(filteredMaintTractors()));
-  } else {
-    document.getElementById("page-title").textContent = "Insured Value & Lease Register";
+  } else if (view === "lease") {
+    document.getElementById("page-title").textContent = "Leased Equipment";
     document.getElementById("page-meta").innerHTML = `<span class="mono">${LEASE_DATA.meta.insuredCount}</span> of <span class="mono">${LEASE_DATA.meta.unitCount}</span> tractors/trailers carry a Transafe PD insured value; <span class="mono">${LEASE_DATA.meta.leasedCount}</span> are leased-in from ${Object.keys(LEASE_DATA.meta.lessorCounts).length} vendors at <span class="mono">${fmtUSDFull(LEASE_DATA.meta.leasedSum)}</span>/mo.`;
     document.getElementById("theme-note").textContent = "Insured Value = Transafe PD schedule ($50K+ tracked only). Lease Rate = vendor invoice, leased-in units only.";
     renderLeaseCharts(filteredLease());
+  } else if (view === "sources") {
+    document.getElementById("page-title").textContent = "Source Worksheets";
+    document.getElementById("page-meta").innerHTML = SOURCE_DATA?.checkedAt ? `Source snapshot as of <span class="mono">${new Date(SOURCE_DATA.checkedAt).toLocaleString()}</span>.` : "Source snapshot.";
+    document.getElementById("theme-note").textContent = "Each card shows the report's own as-of date, not just when it landed";
+    renderStaticSources();
   }
 }
 
@@ -2130,7 +2443,8 @@ renderMaintFilters();
 updateMaint();
 renderLeaseFilters();
 updateLease();
-setView("fleet");
+if (Array.isArray(SOURCE_DATA?.files)) updateFeedHealth(SOURCE_DATA.files);
+setView("overview");
 window.addEventListener("resize", () => {
   renderCharts(filtered());
   if (currentView === "assets") renderAssetCharts(filteredAssets());

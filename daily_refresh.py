@@ -40,6 +40,7 @@ import parse_unbilled_orders
 import build_dashboard_data
 import build_asset_data
 import build_maintenance_data
+import build_sources_data
 import assemble_dashboard
 
 
@@ -77,6 +78,9 @@ def main():
 
     print("\n--- [6/6] build_maintenance_data ---")
     build_maintenance_data.main()
+
+    print("\n--- build_sources_data ---")
+    build_sources_data.main()
 
     print("\n--- assemble_dashboard ---")
     assemble_dashboard.main()

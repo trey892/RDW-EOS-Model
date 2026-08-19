@@ -2436,6 +2436,124 @@ function renderMaintCharts(tractorRows, woRows) {
   grid.innerHTML = "";
   const byOwnership = groupBy(tractorRows, "ownership");
 
+  /* ---- Panel: PM Due & Compliance by Terminal ---- */
+  const pmDueRowsForCompliance = filteredPmDue(tractorRows);
+  const tractorById = new Map(tractorRows.map(t => [t.assetId, t]));
+  const complianceById = new Map((PM_COMPLIANCE_DATA?.vehicles || []).map(v => [v.vehicle, v]));
+  const terminalPmMap = new Map();
+  tractorRows.forEach(t => {
+    const terminal = t.terminal || "UNAS";
+    if (!terminalPmMap.has(terminal)) terminalPmMap.set(terminal, {terminal, active: 0, overdue: 0, overdueUnits: new Set(), pmTotal: 0, compliant: 0, coveredUnits: 0});
+    terminalPmMap.get(terminal).active += 1;
+  });
+  pmDueRowsForCompliance.filter(p => p.dueStatus === "Past Due" && !isPmMileageBaselineGap(p)).forEach(p => {
+    const t = tractorById.get(p.assetId);
+    const terminal = t?.terminal || "UNAS";
+    if (!terminalPmMap.has(terminal)) terminalPmMap.set(terminal, {terminal, active: 0, overdue: 0, overdueUnits: new Set(), pmTotal: 0, compliant: 0, coveredUnits: 0});
+    const item = terminalPmMap.get(terminal);
+    item.overdue += 1;
+    item.overdueUnits.add(p.assetId);
+  });
+  tractorRows.forEach(t => {
+    const rec = complianceById.get(t.assetId);
+    if (!rec) return;
+    const terminal = t.terminal || "UNAS";
+    const item = terminalPmMap.get(terminal);
+    item.pmTotal += rec.totalPMs || 0;
+    item.compliant += (rec.onTimePct != null ? Math.round((rec.totalPMs || 0) * ((rec.onTimePct + (rec.earlyPct || 0)) / 100)) : 0);
+    item.coveredUnits += 1;
+  });
+  const pmTerminalRows = Array.from(terminalPmMap.values()).sort((a, b) => b.overdue - a.overdue || a.terminal.localeCompare(b.terminal));
+  const pPm = panel("PM Due & Compliance by Terminal", (PM_COMPLIANCE_DATA?.dateRange || "compliance period n/a") + " completions &middot; PM-due snapshot " + (MAINT_DATA.meta.pmDueSource.match(/last refreshed ([\d-]+)/)?.[1] || "unknown"), "maint-pm-unused", true);
+  pPm.querySelector("svg").remove();
+  const pmWrap = document.createElement("div");
+  pmWrap.className = "table-wrap";
+  pmWrap.innerHTML = pmTerminalRows.length ? `<table class="data-table maint-table-compact"><thead><tr><th>Terminal</th><th>Active</th><th>Overdue PMs</th><th>Units Overdue</th><th>Compliance</th></tr></thead><tbody>${pmTerminalRows.map(r => {
+    const pct = r.pmTotal ? r.compliant / r.pmTotal * 100 : null;
+    return `<tr><td><strong>${r.terminal}</strong></td><td class="num">${fmtNum(r.active)}</td><td class="num">${fmtNum(r.overdue)}</td><td class="num">${fmtNum(r.overdueUnits.size)}</td><td class="num">${pct == null ? '<span class="maint-na">Not covered</span>' : `<span class="maint-progress"><span style="width:${Math.max(2, pct)}%"></span></span> ${pct.toFixed(1)}%`}</td></tr>`;
+  }).join("")}</tbody></table>` : `<div class="panel-note">No PM records match the current filters.</div>`;
+  pPm.appendChild(pmWrap);
+  const pmCoverage = document.createElement("div");
+  pmCoverage.className = "maint-coverage-note";
+  const pmBaselineGapCount = pmDueRowsForCompliance.filter(p => p.dueStatus === "Past Due" && isPmMileageBaselineGap(p)).length;
+  pmCoverage.textContent = `PM compliance counts on-time plus early completions as compliant. The compliance report covers ${complianceById.size ? Array.from(terminalPmMap.values()).reduce((s, r) => s + r.coveredUnits, 0) : 0} tractors in the current selection; uncovered tractors are excluded from the rate. Overdue counts omit ${pmBaselineGapCount} mileage-based rows with Previous Done = 0; those remain flagged in the PM detail table for correction.`;
+  pPm.appendChild(pmCoverage);
+  grid.appendChild(pPm);
+
+  /* ---- Panel: Down Units & Downtime ---- */
+  const downRows = tractorRows.filter(t => t.downStatus != null).sort((a, b) => (Number(b.downDays) || 0) - (Number(a.downDays) || 0));
+  const pDown = panel("Down Units & Downtime", "active Down Report records &middot; current selection", "maint-down-unused", true);
+  pDown.querySelector("svg").remove();
+  const avgDownDays = downRows.length ? downRows.reduce((s, t) => s + (Number(t.downDays) || 0), 0) / downRows.length : null;
+  const agedDown = downRows.filter(t => (Number(t.downDays) || 0) >= 7).length;
+  const noEta = downRows.filter(t => !t.downEtaCompletion).length;
+  const downSummary = document.createElement("div");
+  downSummary.className = "maint-panel-summary";
+  downSummary.innerHTML = `<div class="maint-summary-item"><div class="maint-summary-value ${downRows.length ? "crit" : "good"}">${fmtNum(downRows.length)}</div><div class="maint-summary-label">Down now</div></div><div class="maint-summary-item"><div class="maint-summary-value ${agedDown ? "warn" : "good"}">${fmtNum(agedDown)}</div><div class="maint-summary-label">Down 7+ days</div></div><div class="maint-summary-item"><div class="maint-summary-value ${noEta ? "warn" : "good"}">${fmtNum(noEta)}</div><div class="maint-summary-label">ETA missing</div></div>`;
+  pDown.appendChild(downSummary);
+  const downList = document.createElement("div");
+  downList.innerHTML = downRows.length ? downRows.map(t => `<div class="maint-down-row" title="${t.downEtaCompletion ? "ETA " + String(t.downEtaCompletion).slice(0, 10) : "No ETA in Down Report"}"><span class="maint-down-unit">${t.assetId}</span><span>${t.terminal || "—"}</span><span>${t.downStatus || "—"}</span><span class="maint-down-days">${fmtNum(Number(t.downDays) || 0)}d</span></div>`).join("") : `<div class="panel-note">No active down records match the current filters.</div>`;
+  pDown.appendChild(downList);
+  const downNote = document.createElement("div");
+  downNote.className = "maint-source-note";
+  downNote.textContent = (avgDownDays == null ? "No average available." : `Average active downtime: ${avgDownDays.toFixed(1)} days.`) + " ETA is shown in the row tooltip when present.";
+  pDown.appendChild(downNote);
+  grid.appendChild(pDown);
+
+  /* ---- Panel: Highest-Cost Tractors ---- */
+  const cpmSummary = maintenanceCpmSummary(tractorRows, woRows);
+  const costByAsset = new Map();
+  woRows.forEach(w => costByAsset.set(w.assetId, (costByAsset.get(w.assetId) || 0) + (Number(w.totalCost) || 0)));
+  const costRows = cpmSummary.qualified.map(t => {
+    const cost = costByAsset.get(t.assetId) || 0;
+    const miles = Number(t.annualizedDistance) * cpmSummary.windowDays / 365;
+    return {tractor: t, cost, miles, cpm: miles > 0 ? cost / miles : null};
+  }).filter(r => r.cost > 0 && r.cpm != null).sort((a, b) => b.cpm - a.cpm).slice(0, 10);
+  const pCost = panel("Highest-Cost Tractors", `maintenance WO cost &divide; estimated ${cpmSummary.windowDays}-day miles &middot; 10,000 annualized-mile floor`, "maint-cost-unused", true);
+  pCost.querySelector("svg").remove();
+  const costWrap = document.createElement("div");
+  costWrap.className = "table-wrap";
+  costWrap.innerHTML = costRows.length ? `<table class="data-table maint-table-compact"><thead><tr><th>Rank</th><th>Tractor</th><th>Terminal</th><th>WO Cost</th><th>Est. Miles</th><th>Maint. CPM</th></tr></thead><tbody>${costRows.map((r, i) => `<tr><td class="num">${i + 1}</td><td class="mono"><strong>${r.tractor.assetId}</strong></td><td>${r.tractor.terminal || "—"}</td><td class="num">${fmtUSDFull(r.cost)}</td><td class="num">${fmtNum(Math.round(r.miles))}</td><td class="num"><strong>$${r.cpm.toFixed(2)}</strong></td></tr>`).join("")}</tbody></table>` : `<div class="panel-note">No qualified tractors with maintenance work-order cost match the current filters.</div>`;
+  pCost.appendChild(costWrap);
+  const costNote = document.createElement("div");
+  costNote.className = "maint-source-note";
+  costNote.textContent = `Estimated period miles = annualized distance &times; ${cpmSummary.windowDays}/365. Costs and miles for omitted tractors are excluded from both the numerator and denominator.`;
+  pCost.appendChild(costNote);
+  grid.appendChild(pCost);
+
+  /* ---- Panel: Road Calls & Repeat Shop Visits -- road calls have no source
+     anywhere in the pipeline (stated honestly as N/A); repeat-visit proxy is
+     a real 30-day-gap computation over actual work order dates. ---- */
+  const byAssetWo = new Map();
+  woRows.forEach(w => { if (!byAssetWo.has(w.assetId)) byAssetWo.set(w.assetId, []); byAssetWo.get(w.assetId).push(w); });
+  const repeats = [];
+  byAssetWo.forEach((list, assetId) => {
+    const dates = list.map(w => w.openedDate).filter(Boolean).sort();
+    let repeatCount = 0;
+    for (let i = 1; i < dates.length; i++) {
+      const gap = (new Date(dates[i] + "T00:00:00Z") - new Date(dates[i - 1] + "T00:00:00Z")) / 86400000;
+      if (gap >= 0 && gap <= 30) repeatCount += 1;
+    }
+    if (repeatCount) repeats.push({assetId, repeatCount, workOrders: list.length});
+  });
+  repeats.sort((a, b) => b.repeatCount - a.repeatCount || b.workOrders - a.workOrders || a.assetId.localeCompare(b.assetId));
+  const repeatVisits = repeats.reduce((s, r) => s + r.repeatCount, 0);
+  const pRepeat = panel("Road Calls & Repeat Shop Visits", "road-call source gap &middot; 30-day RTA work-order proxy", "maint-repeat-unused", true);
+  pRepeat.querySelector("svg").remove();
+  const repeatSummary = document.createElement("div");
+  repeatSummary.className = "maint-panel-summary";
+  repeatSummary.innerHTML = `<div class="maint-summary-item"><div class="maint-summary-value warn">N/A</div><div class="maint-summary-label">Road calls not sourced</div></div><div class="maint-summary-item"><div class="maint-summary-value good">&mdash;</div><div class="maint-summary-label">Service incident feed not sourced</div></div><div class="maint-summary-item"><div class="maint-summary-value ${repeatVisits ? "warn" : "good"}">${fmtNum(repeatVisits)}</div><div class="maint-summary-label">Repeat visits within 30 days</div></div>`;
+  pRepeat.appendChild(repeatSummary);
+  const repeatWrap = document.createElement("div");
+  repeatWrap.className = "table-wrap";
+  repeatWrap.innerHTML = repeats.length ? `<table class="data-table maint-table-compact"><thead><tr><th>Tractor</th><th>Work Orders</th><th>30-Day Repeat Visits</th></tr></thead><tbody>${repeats.slice(0, 8).map(r => `<tr><td class="mono"><strong>${r.assetId}</strong></td><td class="num">${fmtNum(r.workOrders)}</td><td class="num">${fmtNum(r.repeatCount)}</td></tr>`).join("")}</tbody></table>` : `<div class="panel-note">No repeat shop visits within 30 days match the current filters.</div>`;
+  pRepeat.appendChild(repeatWrap);
+  const repeatNote = document.createElement("div");
+  repeatNote.className = "maint-coverage-note";
+  repeatNote.textContent = "Repeat shop visit is a timing proxy, not proof of a comeback repair; the work-order extract has no component/cause field. Road calls and service incidents remain unavailable until a real source is added to the intake.";
+  pRepeat.appendChild(repeatNote);
+  grid.appendChild(pRepeat);
+
   /* Cost per mile by ownership -- total vs loaded, same $/mi scale so one axis is safe */
   const p1 = panel("Cost per Mile by Ownership", "total direct cost ÷ annualized distance", "chart-cpm", true);
   grid.appendChild(p1);
@@ -2503,124 +2621,6 @@ function renderMaintCharts(tractorRows, woRows) {
     ],
     { width: 380, height: 220, format: fmtNum }
   );
-
-  /* ---- Panel: PM Due & Compliance by Terminal ---- */
-  const pmDueRowsForCompliance = filteredPmDue(tractorRows);
-  const tractorById = new Map(tractorRows.map(t => [t.assetId, t]));
-  const complianceById = new Map((PM_COMPLIANCE_DATA?.vehicles || []).map(v => [v.vehicle, v]));
-  const terminalPmMap = new Map();
-  tractorRows.forEach(t => {
-    const terminal = t.terminal || "UNAS";
-    if (!terminalPmMap.has(terminal)) terminalPmMap.set(terminal, {terminal, active: 0, overdue: 0, overdueUnits: new Set(), pmTotal: 0, compliant: 0, coveredUnits: 0});
-    terminalPmMap.get(terminal).active += 1;
-  });
-  pmDueRowsForCompliance.filter(p => p.dueStatus === "Past Due" && !isPmMileageBaselineGap(p)).forEach(p => {
-    const t = tractorById.get(p.assetId);
-    const terminal = t?.terminal || "UNAS";
-    if (!terminalPmMap.has(terminal)) terminalPmMap.set(terminal, {terminal, active: 0, overdue: 0, overdueUnits: new Set(), pmTotal: 0, compliant: 0, coveredUnits: 0});
-    const item = terminalPmMap.get(terminal);
-    item.overdue += 1;
-    item.overdueUnits.add(p.assetId);
-  });
-  tractorRows.forEach(t => {
-    const rec = complianceById.get(t.assetId);
-    if (!rec) return;
-    const terminal = t.terminal || "UNAS";
-    const item = terminalPmMap.get(terminal);
-    item.pmTotal += rec.totalPMs || 0;
-    item.compliant += (rec.onTimePct != null ? Math.round((rec.totalPMs || 0) * ((rec.onTimePct + (rec.earlyPct || 0)) / 100)) : 0);
-    item.coveredUnits += 1;
-  });
-  const pmTerminalRows = Array.from(terminalPmMap.values()).sort((a, b) => b.overdue - a.overdue || a.terminal.localeCompare(b.terminal));
-  const pPm = panel("PM Due & Compliance by Terminal", (PM_COMPLIANCE_DATA?.dateRange || "compliance period n/a") + " completions &middot; PM-due snapshot " + (MAINT_DATA.meta.pmDueSource.match(/last refreshed ([\d-]+)/)?.[1] || "unknown"), "maint-pm-unused");
-  pPm.querySelector("svg").remove();
-  const pmWrap = document.createElement("div");
-  pmWrap.className = "table-wrap";
-  pmWrap.innerHTML = pmTerminalRows.length ? `<table class="data-table maint-table-compact"><thead><tr><th>Terminal</th><th>Active</th><th>Overdue PMs</th><th>Units Overdue</th><th>Compliance</th></tr></thead><tbody>${pmTerminalRows.map(r => {
-    const pct = r.pmTotal ? r.compliant / r.pmTotal * 100 : null;
-    return `<tr><td><strong>${r.terminal}</strong></td><td class="num">${fmtNum(r.active)}</td><td class="num">${fmtNum(r.overdue)}</td><td class="num">${fmtNum(r.overdueUnits.size)}</td><td class="num">${pct == null ? '<span class="maint-na">Not covered</span>' : `<span class="maint-progress"><span style="width:${Math.max(2, pct)}%"></span></span> ${pct.toFixed(1)}%`}</td></tr>`;
-  }).join("")}</tbody></table>` : `<div class="panel-note">No PM records match the current filters.</div>`;
-  pPm.appendChild(pmWrap);
-  const pmCoverage = document.createElement("div");
-  pmCoverage.className = "maint-coverage-note";
-  const pmBaselineGapCount = pmDueRowsForCompliance.filter(p => p.dueStatus === "Past Due" && isPmMileageBaselineGap(p)).length;
-  pmCoverage.textContent = `PM compliance counts on-time plus early completions as compliant. The compliance report covers ${complianceById.size ? Array.from(terminalPmMap.values()).reduce((s, r) => s + r.coveredUnits, 0) : 0} tractors in the current selection; uncovered tractors are excluded from the rate. Overdue counts omit ${pmBaselineGapCount} mileage-based rows with Previous Done = 0; those remain flagged in the PM detail table for correction.`;
-  pPm.appendChild(pmCoverage);
-  grid.appendChild(pPm);
-
-  /* ---- Panel: Down Units & Downtime ---- */
-  const downRows = tractorRows.filter(t => t.downStatus != null).sort((a, b) => (Number(b.downDays) || 0) - (Number(a.downDays) || 0));
-  const pDown = panel("Down Units & Downtime", "active Down Report records &middot; current selection", "maint-down-unused");
-  pDown.querySelector("svg").remove();
-  const avgDownDays = downRows.length ? downRows.reduce((s, t) => s + (Number(t.downDays) || 0), 0) / downRows.length : null;
-  const agedDown = downRows.filter(t => (Number(t.downDays) || 0) >= 7).length;
-  const noEta = downRows.filter(t => !t.downEtaCompletion).length;
-  const downSummary = document.createElement("div");
-  downSummary.className = "maint-panel-summary";
-  downSummary.innerHTML = `<div class="maint-summary-item"><div class="maint-summary-value ${downRows.length ? "crit" : "good"}">${fmtNum(downRows.length)}</div><div class="maint-summary-label">Down now</div></div><div class="maint-summary-item"><div class="maint-summary-value ${agedDown ? "warn" : "good"}">${fmtNum(agedDown)}</div><div class="maint-summary-label">Down 7+ days</div></div><div class="maint-summary-item"><div class="maint-summary-value ${noEta ? "warn" : "good"}">${fmtNum(noEta)}</div><div class="maint-summary-label">ETA missing</div></div>`;
-  pDown.appendChild(downSummary);
-  const downList = document.createElement("div");
-  downList.innerHTML = downRows.length ? downRows.map(t => `<div class="maint-down-row" title="${t.downEtaCompletion ? "ETA " + String(t.downEtaCompletion).slice(0, 10) : "No ETA in Down Report"}"><span class="maint-down-unit">${t.assetId}</span><span>${t.terminal || "—"}</span><span>${t.downStatus || "—"}</span><span class="maint-down-days">${fmtNum(Number(t.downDays) || 0)}d</span></div>`).join("") : `<div class="panel-note">No active down records match the current filters.</div>`;
-  pDown.appendChild(downList);
-  const downNote = document.createElement("div");
-  downNote.className = "maint-source-note";
-  downNote.textContent = (avgDownDays == null ? "No average available." : `Average active downtime: ${avgDownDays.toFixed(1)} days.`) + " ETA is shown in the row tooltip when present.";
-  pDown.appendChild(downNote);
-  grid.appendChild(pDown);
-
-  /* ---- Panel: Highest-Cost Tractors ---- */
-  const cpmSummary = maintenanceCpmSummary(tractorRows, woRows);
-  const costByAsset = new Map();
-  woRows.forEach(w => costByAsset.set(w.assetId, (costByAsset.get(w.assetId) || 0) + (Number(w.totalCost) || 0)));
-  const costRows = cpmSummary.qualified.map(t => {
-    const cost = costByAsset.get(t.assetId) || 0;
-    const miles = Number(t.annualizedDistance) * cpmSummary.windowDays / 365;
-    return {tractor: t, cost, miles, cpm: miles > 0 ? cost / miles : null};
-  }).filter(r => r.cost > 0 && r.cpm != null).sort((a, b) => b.cpm - a.cpm).slice(0, 10);
-  const pCost = panel("Highest-Cost Tractors", `maintenance WO cost &divide; estimated ${cpmSummary.windowDays}-day miles &middot; 10,000 annualized-mile floor`, "maint-cost-unused");
-  pCost.querySelector("svg").remove();
-  const costWrap = document.createElement("div");
-  costWrap.className = "table-wrap";
-  costWrap.innerHTML = costRows.length ? `<table class="data-table maint-table-compact"><thead><tr><th>Rank</th><th>Tractor</th><th>Terminal</th><th>WO Cost</th><th>Est. Miles</th><th>Maint. CPM</th></tr></thead><tbody>${costRows.map((r, i) => `<tr><td class="num">${i + 1}</td><td class="mono"><strong>${r.tractor.assetId}</strong></td><td>${r.tractor.terminal || "—"}</td><td class="num">${fmtUSDFull(r.cost)}</td><td class="num">${fmtNum(Math.round(r.miles))}</td><td class="num"><strong>$${r.cpm.toFixed(2)}</strong></td></tr>`).join("")}</tbody></table>` : `<div class="panel-note">No qualified tractors with maintenance work-order cost match the current filters.</div>`;
-  pCost.appendChild(costWrap);
-  const costNote = document.createElement("div");
-  costNote.className = "maint-source-note";
-  costNote.textContent = `Estimated period miles = annualized distance &times; ${cpmSummary.windowDays}/365. Costs and miles for omitted tractors are excluded from both the numerator and denominator.`;
-  pCost.appendChild(costNote);
-  grid.appendChild(pCost);
-
-  /* ---- Panel: Road Calls & Repeat Shop Visits -- road calls have no source
-     anywhere in the pipeline (stated honestly as N/A); repeat-visit proxy is
-     a real 30-day-gap computation over actual work order dates. ---- */
-  const byAssetWo = new Map();
-  woRows.forEach(w => { if (!byAssetWo.has(w.assetId)) byAssetWo.set(w.assetId, []); byAssetWo.get(w.assetId).push(w); });
-  const repeats = [];
-  byAssetWo.forEach((list, assetId) => {
-    const dates = list.map(w => w.openedDate).filter(Boolean).sort();
-    let repeatCount = 0;
-    for (let i = 1; i < dates.length; i++) {
-      const gap = (new Date(dates[i] + "T00:00:00Z") - new Date(dates[i - 1] + "T00:00:00Z")) / 86400000;
-      if (gap >= 0 && gap <= 30) repeatCount += 1;
-    }
-    if (repeatCount) repeats.push({assetId, repeatCount, workOrders: list.length});
-  });
-  repeats.sort((a, b) => b.repeatCount - a.repeatCount || b.workOrders - a.workOrders || a.assetId.localeCompare(b.assetId));
-  const repeatVisits = repeats.reduce((s, r) => s + r.repeatCount, 0);
-  const pRepeat = panel("Road Calls & Repeat Shop Visits", "road-call source gap &middot; 30-day RTA work-order proxy", "maint-repeat-unused");
-  pRepeat.querySelector("svg").remove();
-  const repeatSummary = document.createElement("div");
-  repeatSummary.className = "maint-panel-summary";
-  repeatSummary.innerHTML = `<div class="maint-summary-item"><div class="maint-summary-value warn">N/A</div><div class="maint-summary-label">Road calls not sourced</div></div><div class="maint-summary-item"><div class="maint-summary-value good">&mdash;</div><div class="maint-summary-label">Service incident feed not sourced</div></div><div class="maint-summary-item"><div class="maint-summary-value ${repeatVisits ? "warn" : "good"}">${fmtNum(repeatVisits)}</div><div class="maint-summary-label">Repeat visits within 30 days</div></div>`;
-  pRepeat.appendChild(repeatSummary);
-  const repeatWrap = document.createElement("div");
-  repeatWrap.className = "table-wrap";
-  repeatWrap.innerHTML = repeats.length ? `<table class="data-table maint-table-compact"><thead><tr><th>Tractor</th><th>Work Orders</th><th>30-Day Repeat Visits</th></tr></thead><tbody>${repeats.slice(0, 8).map(r => `<tr><td class="mono"><strong>${r.assetId}</strong></td><td class="num">${fmtNum(r.workOrders)}</td><td class="num">${fmtNum(r.repeatCount)}</td></tr>`).join("")}</tbody></table>` : `<div class="panel-note">No repeat shop visits within 30 days match the current filters.</div>`;
-  pRepeat.appendChild(repeatWrap);
-  const repeatNote = document.createElement("div");
-  repeatNote.className = "maint-coverage-note";
-  repeatNote.textContent = "Repeat shop visit is a timing proxy, not proof of a comeback repair; the work-order extract has no component/cause field. Road calls and service incidents remain unavailable until a real source is added to the intake.";
-  pRepeat.appendChild(repeatNote);
-  grid.appendChild(pRepeat);
 
   /* ---- Panel: Units Omitted from Maintenance CPM ---- */
   const omittedRows = cpmSummary.omitted.sort((a, b) => {

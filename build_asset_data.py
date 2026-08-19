@@ -9,6 +9,12 @@ import pandas as pd
 SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "asset_data.json"
 
+# Manual out-of-service override for Trailer Master -- ported as-is from the prior
+# dashboard build (rdw-fleet-site), not derived from any live source. This is a
+# point-in-time hand-curated list, not automated data -- review/update periodically
+# rather than trusting it stays accurate indefinitely.
+TRAILER_MASTER_OOS_IDS = {"1130", "1587", "1637", "462", "AES132", "AES137", "AES139"}
+
 
 def sheet_df(wb, name):
     ws = wb[name]
@@ -45,6 +51,10 @@ def main():
             except (ValueError, TypeError):
                 age = None
 
+        asset_id_norm = str(row.AssetID or "").strip().upper()
+        raw_type = str(row.Model or "").strip().upper()
+        trailer_equipment_type = "R/O" if raw_type == "R-O" else raw_type
+
         records.append({
             "assetKey": ak,
             "assetId": row.AssetID,
@@ -68,14 +78,20 @@ def main():
             "netBookValue": g("Net Book Value"),
             "depreciation": g("Depreciation"),
             "maintenanceCostTotal": None if ak not in maint_cost.index else round(float(maint_cost.loc[ak]), 2),
+            "trailerEquipmentType": trailer_equipment_type or None,
+            "trailerMasterStatus": "Out of Service" if asset_id_norm in TRAILER_MASTER_OOS_IDS else (row.ServiceStatus or "Active"),
         })
 
     by_type = pd.DataFrame(records)["assetType"].value_counts().to_dict()
 
+    trailers = [r for r in records if r["assetType"] == "TRAILER"]
     meta = {
         "builtFrom": "RDW_EOS_Master_latest.xlsx",
         "assetCount": len(records),
         "byType": by_type,
+        "trailerMasterRawCount": len(trailers),
+        "trailerMasterOutOfServiceCount": sum(1 for r in trailers if r["trailerMasterStatus"] == "Out of Service"),
+        "trailerMasterMissingTypeCount": sum(1 for r in trailers if not r["trailerEquipmentType"]),
     }
     payload = {"meta": meta, "assets": records}
     OUT.write_text(json.dumps(payload, default=str), encoding="utf-8")

@@ -275,6 +275,7 @@
     min-width: 0;
   }
   .panel.wide { grid-column: 1 / -1; }
+  .panel-toggle { display: flex; gap: 8px; flex-wrap: wrap; }
   .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .panel-title { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
   .panel-note { font-size: 11px; color: var(--muted); }
@@ -1493,6 +1494,7 @@ function groupBy(rows, key) {
 }
 
 const unbilledSortState = {key: "terminal", dir: 1};
+let assetTerminalBreakdown = "Total";
 const rtdAvailabilityFilters = {sheetStatus: "", status: "", style: ""};
 function buildRtdAvailabilityFilters(allUnits, visibleCount) {
   const controls = [
@@ -2053,6 +2055,20 @@ function renderAssetTicker(rows) {
   });
 }
 
+function renderAssetTerminalTable(tractorRows) {
+  const wrap = document.getElementById("asset-terminal-table-wrap");
+  if (!wrap) return;
+  const scoped = assetTerminalBreakdown === "Total" ? tractorRows : tractorRows.filter(t => t.ownership === assetTerminalBreakdown);
+  const byTerminal = groupBy(scoped, "terminal");
+  const termRows = Array.from(byTerminal.entries())
+    .map(([terminal, list]) => ({terminal, count: list.length}))
+    .sort((a, b) => b.count - a.count || a.terminal.localeCompare(b.terminal));
+  const total = scoped.length;
+  wrap.innerHTML = termRows.length
+    ? `<table class="data-table"><thead><tr><th>Terminal</th><th>Tractors</th><th>Share</th></tr></thead><tbody>${termRows.map(r => `<tr><td><strong>${r.terminal}</strong></td><td class="num">${fmtNum(r.count)}</td><td class="num">${total ? (r.count / total * 100).toFixed(1) : "0.0"}%</td></tr>`).join("")}</tbody></table>`
+    : `<div class="panel-note">No tractors match the current selection${assetTerminalBreakdown === "Total" ? "" : " for " + assetTerminalBreakdown}.</div>`;
+}
+
 function renderAssetCharts(rows) {
   const grid = document.getElementById("asset-grid");
   grid.innerHTML = "";
@@ -2116,6 +2132,36 @@ function renderAssetCharts(rows) {
      kept in one place rather than duplicated into ASSET_DATA. */
   const tractorEconByAssetId = new Map(DATA.tractors.map(t => [t.assetId, t]));
   const tractorRows = rows.filter(a => a.assetType === "TRACTOR");
+
+  /* Panel: Tractor Assignment by Terminal -- toggle between total count and
+     an ownership-class breakdown (Total / Company / Lease Purchase / Owner
+     Operator), all from the same tractorRows already scoped to the current
+     Asset Inventory filters. */
+  const pTerm = panel("Tractor Assignment by Terminal", "active tractors &middot; current selection", "asset-terminal-svg-unused", true);
+  pTerm.querySelector("svg").remove();
+  const termToggle = document.createElement("div");
+  termToggle.className = "panel-toggle";
+  const termOptions = [
+    {key: "Total", label: "Total"},
+    {key: "Company", label: "Company"},
+    {key: "Lease Purchase", label: "LP"},
+    {key: "Owner Operator", label: "OO"},
+  ];
+  termToggle.innerHTML = termOptions.map(o => `<button type="button" class="pill" data-terminal-breakdown="${o.key}" aria-pressed="${assetTerminalBreakdown === o.key}">${o.label}</button>`).join("");
+  pTerm.appendChild(termToggle);
+  const termTableWrap = document.createElement("div");
+  termTableWrap.className = "table-wrap";
+  termTableWrap.id = "asset-terminal-table-wrap";
+  pTerm.appendChild(termTableWrap);
+  grid.appendChild(pTerm);
+  renderAssetTerminalTable(tractorRows);
+  termToggle.addEventListener("click", e => {
+    const btn = e.target.closest("button[data-terminal-breakdown]");
+    if (!btn) return;
+    assetTerminalBreakdown = btn.dataset.terminalBreakdown;
+    termToggle.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+    renderAssetTerminalTable(tractorRows);
+  });
 
   /* Panel 5: Coming Due to Sell -- tractors RTD already has flagged TOSELL
      (Assigned Driver field), same source as the Fleet Operations panels. */

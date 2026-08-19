@@ -482,6 +482,36 @@
     .source-workspace { padding-top:14px; }
     .source-folder-links, .source-folder-link { width:100%; }
   }
+
+  /* ---------------- Trailer Master ---------------- */
+  .trailer-source-banner {
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    margin:16px clamp(16px,4vw,40px) 0; padding:12px 15px;
+    border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:9px;
+    background:var(--surface); color:var(--ink-2); font-size:11.5px; line-height:1.5;
+  }
+  .trailer-source-banner strong { color:var(--ink); }
+  .trailer-source-link { color:var(--accent); font-weight:800; text-decoration:none; white-space:nowrap; }
+  .trailer-source-link:hover { text-decoration:underline; }
+  .trailer-master-grid { padding-bottom:16px; }
+  .trailer-summary-table td:last-child, .trailer-summary-table th:last-child { text-align:right; }
+  .trailer-status { display:inline-flex; align-items:center; gap:6px; font-weight:750; }
+  .trailer-status::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--good); }
+  .trailer-status.oos { color:var(--critical); }
+  .trailer-status.oos::before { background:var(--critical); }
+  #trailer-master-table tbody tr.trailer-row-oos { background:rgba(208,59,59,.07); }
+  .trailer-pagination { display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:12px 0 2px; }
+  .trailer-pagination .pill:disabled { cursor:not-allowed; opacity:.45; }
+  .trailer-page-label { color:var(--ink-2); font-size:11.5px; min-width:92px; text-align:center; }
+  .trailer-quality-note {
+    margin:0 clamp(16px,4vw,40px) 26px; padding:12px 15px; border:1px solid var(--border);
+    border-radius:9px; background:var(--surface-2); color:var(--ink-2); font-size:11.5px; line-height:1.5;
+  }
+  .trailer-quality-note strong { color:var(--ink); }
+  @media (max-width:640px) {
+    .trailer-source-banner { align-items:flex-start; }
+    .trailer-pagination { justify-content:center; }
+  }
 </style>
 
 <header class="gantry">
@@ -760,6 +790,72 @@
           </tr>
         </thead>
         <tbody id="lease-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="view-trailers" style="display:none">
+  <div class="ticker" id="trailer-master-ticker"></div>
+  <div class="trailer-source-banner">
+    <span><strong>Source:</strong> lease/insurance register &middot; <span class="mono" id="trailer-source-summary">&mdash;</span></span>
+  </div>
+  <div class="filterbar">
+    <div class="filter-group"><span class="fg-label">Type</span><div id="filter-trailertype"></div></div>
+    <div class="filter-group"><span class="fg-label">Fleet</span><select class="pill" id="filter-trailerfleet"></select></div>
+    <div class="filter-group"><span class="fg-label">Owner</span><select class="pill" id="filter-trailerowner"></select></div>
+    <div class="filter-group"><span class="fg-label">Status</span><div id="filter-trailerstatus"></div></div>
+    <div class="filter-group" style="flex:1; min-width:200px;">
+      <input type="search" class="pill" id="trailer-master-search" placeholder="Search trailer #, make, fleet, owner&hellip;" style="width:100%; max-width:300px; border-radius:8px; cursor:text;">
+    </div>
+    <button class="reset-btn" id="reset-trailer-master">Reset filters</button>
+    <span class="filter-count" id="trailer-master-filter-count"></span>
+  </div>
+  <main class="grid trailer-master-grid" id="trailer-master-grid"></main>
+  <div class="panel wide" style="margin:0 clamp(16px,4vw,40px) 16px;">
+    <div class="panel-head"><div class="panel-title">Trailer Master Register</div><div class="panel-note" id="trailer-master-table-note"></div></div>
+    <div class="table-wrap">
+      <table class="data-table" id="trailer-master-table">
+        <thead><tr>
+          <th data-trailer-sort="assetId">Trailer #</th><th data-trailer-sort="trailerEquipmentType">Type</th>
+          <th data-trailer-sort="fleet">Fleet</th><th data-trailer-sort="owner">Owner</th>
+          <th data-trailer-sort="year">Year</th><th data-trailer-sort="make">Make</th>
+          <th data-trailer-sort="trailerMasterStatus">Status</th><th data-trailer-sort="insuredValue">Insured Value</th>
+          <th data-trailer-sort="monthlyLeaseRate">Monthly Base Lease</th>
+        </tr></thead>
+        <tbody id="trailer-master-table-body"></tbody>
+      </table>
+    </div>
+    <div class="trailer-pagination">
+      <button class="pill" id="trailer-page-prev" type="button">Previous</button>
+      <span class="trailer-page-label" id="trailer-page-label"></span>
+      <button class="pill" id="trailer-page-next" type="button">Next</button>
+    </div>
+  </div>
+  <div class="trailer-quality-note"><strong>Data guardrails:</strong> roll-off boxes remain separate from towable trailers; R-O is normalized to R/O; a manual out-of-service override list marks a handful of units out of service even when the raw status says Active; unclassified records are held for correction rather than guessed into the wrong equipment type.</div>
+</section>
+
+<section class="view" id="view-insurance" style="display:none">
+  <div class="ticker" id="insurance-ticker"></div>
+  <div class="filterbar">
+    <div class="filter-group"><span class="fg-label">Type</span><div id="filter-insurancetype"></div></div>
+    <div class="filter-group" style="flex:1; min-width:200px;">
+      <input type="search" class="pill" id="insurance-search" placeholder="Search unit #, make, owner&hellip;" style="width:100%; max-width:260px; border-radius:8px; cursor:text;">
+    </div>
+    <button class="reset-btn" id="reset-insurance-filters">Reset filters</button>
+    <span class="filter-count" id="insurance-filter-count"></span>
+  </div>
+  <main class="grid" id="insurance-grid"></main>
+  <div class="panel wide" style="margin:0 clamp(16px,4vw,40px) 24px;">
+    <div class="panel-head"><div class="panel-title">Insurance Register</div><div class="panel-note" id="insurance-table-note"></div></div>
+    <div class="table-wrap">
+      <table class="data-table" id="insurance-table">
+        <thead><tr>
+          <th data-sort="assetId">Unit #</th><th data-sort="assetType">Type</th><th data-sort="year">Year</th>
+          <th data-sort="make">Make / Model</th><th data-sort="owner">Owner</th><th data-sort="status">Status</th>
+          <th data-sort="insuredValue">Insured Value</th>
+        </tr></thead>
+        <tbody id="insurance-table-body"></tbody>
       </table>
     </div>
   </div>
@@ -2386,6 +2482,276 @@ function renderStaticSources() {
   }).join("");
 }
 
+/* ---------------- Trailer Master ---------------- */
+const TRAILER_MASTER_TYPE_LABELS = {
+  "BT": "Bulk Tank", "VAN": "Van", "F/B": "Flatbed", "DUMP": "Dump Trailer",
+  "R/O": "Roll-Off Trailer", "VAC": "Vacuum Tank", "RBOX": "Roll-Off Box", "": "Unclassified"
+};
+const TRAILER_MASTER_TOWABLE_TYPES = new Set(["BT", "VAN", "F/B", "DUMP", "R/O", "VAC"]);
+const trailerMasterRows = (LEASE_DATA?.units || []).filter(row => row.assetType === "TRAILER");
+const trailerMasterState = { type: "All", fleet: "All", owner: "All", status: "All", search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
+
+function trailerMasterType(row) {
+  const value = String(row.trailerEquipmentType || row.model || "").trim().toUpperCase();
+  return value === "R-O" ? "R/O" : value;
+}
+function trailerMasterStatus(row) { return String(row.trailerMasterStatus || row.status || "Active"); }
+function trailerMasterOwner(row) { return String(row.owner || "Unassigned"); }
+function trailerMasterFleet(row) { return String(row.fleet || "UNAS"); }
+
+function trailerMasterFilteredRows() {
+  const query = trailerMasterState.search.trim().toLowerCase();
+  return trailerMasterRows.filter(row => {
+    const type = trailerMasterType(row);
+    if (trailerMasterState.type !== "All" && type !== trailerMasterState.type) return false;
+    if (trailerMasterState.fleet !== "All" && trailerMasterFleet(row) !== trailerMasterState.fleet) return false;
+    if (trailerMasterState.owner !== "All" && trailerMasterOwner(row) !== trailerMasterState.owner) return false;
+    if (trailerMasterState.status !== "All" && trailerMasterStatus(row) !== trailerMasterState.status) return false;
+    if (query) {
+      const haystack = [row.assetId, type, row.fleet, row.owner, row.year, row.make, trailerMasterStatus(row)].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+}
+function trailerMasterSortedRows(rows) {
+  return [...rows].sort((a, b) => {
+    const valueFor = row => {
+      if (trailerMasterState.sortKey === "trailerEquipmentType") return trailerMasterType(row);
+      if (trailerMasterState.sortKey === "trailerMasterStatus") return trailerMasterStatus(row);
+      return row[trailerMasterState.sortKey];
+    };
+    let av = valueFor(a), bv = valueFor(b);
+    if (av == null || av === "") av = trailerMasterState.sortDir === 1 ? "~~~~" : "";
+    if (bv == null || bv === "") bv = trailerMasterState.sortDir === 1 ? "~~~~" : "";
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * trailerMasterState.sortDir;
+    return String(av).localeCompare(String(bv), undefined, {numeric: true, sensitivity: "base"}) * trailerMasterState.sortDir;
+  });
+}
+function renderTrailerMasterFilters() {
+  const typeOrder = ["All", "BT", "VAN", "F/B", "DUMP", "R/O", "VAC", "RBOX", ""];
+  const typeHost = document.getElementById("filter-trailertype");
+  typeHost.innerHTML = typeOrder.map(type => `<button type="button" class="pill" data-trailer-type="${escapeHtml(type)}" aria-pressed="${trailerMasterState.type === type}">${type === "All" ? "All" : TRAILER_MASTER_TYPE_LABELS[type]}</button>`).join("");
+  typeHost.querySelectorAll("[data-trailer-type]").forEach(b => b.addEventListener("click", () => { trailerMasterState.type = b.dataset.trailerType; trailerMasterState.page = 1; updateTrailerMaster(); }));
+
+  const fleets = Array.from(new Set(trailerMasterRows.map(trailerMasterFleet))).sort((a, b) => a.localeCompare(b));
+  const owners = Array.from(new Set(trailerMasterRows.map(trailerMasterOwner))).sort((a, b) => a.localeCompare(b));
+  const fleetSelect = document.getElementById("filter-trailerfleet");
+  const ownerSelect = document.getElementById("filter-trailerowner");
+  fleetSelect.innerHTML = '<option value="All">All fleets</option>' + fleets.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+  ownerSelect.innerHTML = '<option value="All">All owners</option>' + owners.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+  fleetSelect.value = trailerMasterState.fleet;
+  ownerSelect.value = trailerMasterState.owner;
+  fleetSelect.addEventListener("change", e => { trailerMasterState.fleet = e.target.value; trailerMasterState.page = 1; updateTrailerMaster(); });
+  ownerSelect.addEventListener("change", e => { trailerMasterState.owner = e.target.value; trailerMasterState.page = 1; updateTrailerMaster(); });
+
+  const statusHost = document.getElementById("filter-trailerstatus");
+  statusHost.innerHTML = ["All", "Active", "Out of Service"].map(s => `<button type="button" class="pill" data-trailer-status="${s}" aria-pressed="${trailerMasterState.status === s}">${s}</button>`).join("");
+  statusHost.querySelectorAll("[data-trailer-status]").forEach(b => b.addEventListener("click", () => { trailerMasterState.status = b.dataset.trailerStatus; trailerMasterState.page = 1; updateTrailerMaster(); }));
+
+  document.getElementById("trailer-master-search").addEventListener("input", e => { trailerMasterState.search = e.target.value; trailerMasterState.page = 1; updateTrailerMaster(); });
+  document.getElementById("reset-trailer-master").addEventListener("click", () => {
+    Object.assign(trailerMasterState, {type: "All", fleet: "All", owner: "All", status: "All", search: "", page: 1});
+    fleetSelect.value = "All"; ownerSelect.value = "All"; document.getElementById("trailer-master-search").value = "";
+    updateTrailerMaster();
+  });
+  document.getElementById("trailer-page-prev").addEventListener("click", () => { trailerMasterState.page = Math.max(1, trailerMasterState.page - 1); updateTrailerMaster(); });
+  document.getElementById("trailer-page-next").addEventListener("click", () => { trailerMasterState.page += 1; updateTrailerMaster(); });
+  document.querySelectorAll("#trailer-master-table [data-trailer-sort]").forEach(h => h.addEventListener("click", () => {
+    const key = h.dataset.trailerSort;
+    if (trailerMasterState.sortKey === key) trailerMasterState.sortDir *= -1;
+    else { trailerMasterState.sortKey = key; trailerMasterState.sortDir = key === "assetId" ? 1 : -1; }
+    trailerMasterState.page = 1;
+    updateTrailerMaster();
+  }));
+}
+function syncTrailerMasterFilterButtons() {
+  document.querySelectorAll("[data-trailer-type]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.type === b.dataset.trailerType ? "true" : "false"));
+  document.querySelectorAll("[data-trailer-status]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.status === b.dataset.trailerStatus ? "true" : "false"));
+}
+function renderTrailerMasterTicker(rows) {
+  const active = rows.filter(r => trailerMasterStatus(r) === "Active");
+  const activeTowable = active.filter(r => TRAILER_MASTER_TOWABLE_TYPES.has(trailerMasterType(r))).length;
+  const activeBoxes = active.filter(r => trailerMasterType(r) === "RBOX").length;
+  const outOfService = rows.filter(r => trailerMasterStatus(r) === "Out of Service").length;
+  const unclassified = rows.filter(r => !trailerMasterType(r)).length;
+  const meta = LEASE_DATA.meta || {};
+  const tiles = [
+    {label: "Master Records", value: fmtNum(rows.length), sub: fmtNum(meta.trailerMasterRawCount ?? rows.length) + " raw", cls: "accent"},
+    {label: "Active Towable Trailers", value: fmtNum(activeTowable), sub: "BT, van, flatbed, dump, R/O, vacuum"},
+    {label: "Active Roll-Off Boxes", value: fmtNum(activeBoxes), sub: "kept separate from towable trailers"},
+    {label: "Out of Service", value: fmtNum(outOfService), sub: "manual override list", cls: outOfService ? "crit" : ""},
+    {label: "Unclassified Type", value: fmtNum(unclassified), sub: "held for correction, not guessed", cls: unclassified ? "warn" : ""},
+  ];
+  document.getElementById("trailer-master-ticker").innerHTML = tiles.map(t => `<div class="tile ${t.cls || ""}"><div class="label">${t.label}</div><div class="value mono">${t.value}</div><div class="sub">${t.sub}</div></div>`).join("");
+  document.getElementById("trailer-source-summary").textContent = `${fmtNum(trailerMasterRows.length)} trailer records`;
+}
+function renderTrailerMasterSummary(rows) {
+  const grid = document.getElementById("trailer-master-grid");
+  grid.innerHTML = "";
+  const typeCounts = new Map(), fleetCounts = new Map();
+  rows.forEach(row => {
+    const type = trailerMasterType(row), fleet = trailerMasterFleet(row);
+    typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
+    fleetCounts.set(fleet, (fleetCounts.get(fleet) || 0) + 1);
+  });
+  const typeRows = Array.from(typeCounts, ([type, count]) => ({type, count})).sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+  const fleetRows = Array.from(fleetCounts, ([fleet, count]) => ({fleet, count})).sort((a, b) => b.count - a.count || a.fleet.localeCompare(b.fleet)).slice(0, 12);
+
+  const typePanel = panel("Equipment Type Breakdown", "current trailer-master selection", "trailer-type-unused", true);
+  typePanel.querySelector("svg").remove();
+  typePanel.innerHTML += `<div class="table-wrap"><table class="data-table trailer-summary-table"><thead><tr><th>Type</th><th>Records</th><th>Share</th></tr></thead><tbody>${typeRows.map(r => `<tr><td>${TRAILER_MASTER_TYPE_LABELS[r.type] || r.type || "Unclassified"}</td><td class="num">${fmtNum(r.count)}</td><td class="num">${rows.length ? (r.count / rows.length * 100).toFixed(1) + "%" : "—"}</td></tr>`).join("")}</tbody></table></div>`;
+  grid.appendChild(typePanel);
+
+  const fleetPanel = panel("Top Fleets", "highest trailer-master record counts", "trailer-fleet-unused", true);
+  fleetPanel.querySelector("svg").remove();
+  fleetPanel.innerHTML += `<div class="table-wrap"><table class="data-table trailer-summary-table"><thead><tr><th>Fleet</th><th>Records</th></tr></thead><tbody>${fleetRows.map(r => `<tr><td>${escapeHtml(r.fleet)}</td><td class="num">${fmtNum(r.count)}</td></tr>`).join("")}</tbody></table></div>`;
+  grid.appendChild(fleetPanel);
+}
+function renderTrailerMasterTable(rows) {
+  const sorted = trailerMasterSortedRows(rows);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / trailerMasterState.pageSize));
+  trailerMasterState.page = Math.min(trailerMasterState.page, totalPages);
+  const start = (trailerMasterState.page - 1) * trailerMasterState.pageSize;
+  const shown = sorted.slice(start, start + trailerMasterState.pageSize);
+  document.getElementById("trailer-master-table-body").innerHTML = shown.map(row => {
+    const status = trailerMasterStatus(row), type = trailerMasterType(row);
+    return `<tr class="${status === "Out of Service" ? "trailer-row-oos" : ""}">
+      <td class="mono"><strong>${escapeHtml(row.assetId)}</strong></td>
+      <td><span class="type-chip">${escapeHtml(TRAILER_MASTER_TYPE_LABELS[type] || type || "Unclassified")}</span></td>
+      <td>${escapeHtml(trailerMasterFleet(row))}</td><td>${escapeHtml(trailerMasterOwner(row))}</td>
+      <td class="num">${escapeHtml(row.year || "—")}</td><td>${escapeHtml(row.make || "—")}</td>
+      <td><span class="trailer-status ${status === "Out of Service" ? "oos" : ""}">${escapeHtml(status)}</span></td>
+      <td class="num">${Number(row.insuredValue) > 0 ? fmtUSDFull(row.insuredValue) : "—"}</td>
+      <td class="num">${Number(row.monthlyLeaseRate) > 0 ? fmtUSDFull(row.monthlyLeaseRate) : "—"}</td>
+    </tr>`;
+  }).join("");
+  const end = Math.min(sorted.length, start + shown.length);
+  document.getElementById("trailer-master-table-note").textContent = sorted.length ? `Showing ${start + 1}–${end} of ${sorted.length}` : "No records match";
+  document.getElementById("trailer-page-label").textContent = `Page ${trailerMasterState.page} of ${totalPages}`;
+  document.getElementById("trailer-page-prev").disabled = trailerMasterState.page <= 1;
+  document.getElementById("trailer-page-next").disabled = trailerMasterState.page >= totalPages;
+  document.querySelectorAll("#trailer-master-table [data-trailer-sort]").forEach(h => h.classList.toggle("sorted", h.dataset.trailerSort === trailerMasterState.sortKey));
+}
+function updateTrailerMaster() {
+  const rows = trailerMasterFilteredRows();
+  document.getElementById("trailer-master-filter-count").textContent = `${fmtNum(rows.length)} of ${fmtNum(trailerMasterRows.length)} records match`;
+  syncTrailerMasterFilterButtons();
+  renderTrailerMasterTicker(rows);
+  renderTrailerMasterSummary(rows);
+  renderTrailerMasterTable(rows);
+}
+
+/* ---------------- Insurance ---------------- */
+const insuranceState = {assetType: "All", search: "", sortKey: "insuredValue", sortDir: -1};
+
+function filteredInsurance() {
+  const query = insuranceState.search.trim().toLowerCase();
+  return (LEASE_DATA?.units || []).filter(row => {
+    if (!(Number(row.insuredValue) > 0)) return false;
+    if (insuranceState.assetType !== "All" && row.assetType !== insuranceState.assetType) return false;
+    if (query) {
+      const haystack = (row.assetId + " " + (row.make || "") + " " + (row.model || "") + " " + (row.owner || "")).toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+}
+function renderInsuranceFilters() {
+  const wrap = document.getElementById("filter-insurancetype");
+  wrap.innerHTML = "";
+  [["All", "All"], ["TRACTOR", "Tractor"], ["TRAILER", "Trailer"]].forEach(([value, label]) => {
+    const b = document.createElement("button");
+    b.className = "pill"; b.dataset.value = value; b.textContent = label;
+    b.setAttribute("aria-pressed", insuranceState.assetType === value ? "true" : "false");
+    b.addEventListener("click", () => { insuranceState.assetType = value; updateInsurance(); });
+    wrap.appendChild(b);
+  });
+  document.getElementById("insurance-search").addEventListener("input", e => { insuranceState.search = e.target.value; updateInsurance(); });
+  document.getElementById("reset-insurance-filters").addEventListener("click", () => {
+    insuranceState.assetType = "All"; insuranceState.search = "";
+    document.getElementById("insurance-search").value = "";
+    updateInsurance();
+  });
+  document.querySelectorAll("#insurance-table th[data-sort]").forEach(h => h.addEventListener("click", () => {
+    const key = h.dataset.sort;
+    if (insuranceState.sortKey === key) insuranceState.sortDir *= -1;
+    else { insuranceState.sortKey = key; insuranceState.sortDir = key === "assetId" ? 1 : -1; }
+    document.querySelectorAll("#insurance-table th").forEach(x => x.classList.remove("sorted"));
+    h.classList.add("sorted");
+    renderInsuranceTable(filteredInsurance());
+  }));
+}
+function renderInsuranceTicker(rows) {
+  const totalValue = rows.reduce((s, r) => s + (Number(r.insuredValue) || 0), 0);
+  const tractors = rows.filter(r => r.assetType === "TRACTOR").length;
+  const trailers = rows.filter(r => r.assetType === "TRAILER").length;
+  const highest = rows.length ? Math.max(...rows.map(r => Number(r.insuredValue) || 0)) : 0;
+  const tiles = [
+    {label: "Units on PD Schedule", value: fmtNum(rows.length), sub: "insured equipment in view", cls: "accent"},
+    {label: "Total Insured Value", value: fmtUSD(totalValue), sub: "Transafe declared value", cls: "accent"},
+    {label: "Average Insured Value", value: rows.length ? fmtUSDFull(totalValue / rows.length) : "—", sub: "per scheduled unit"},
+    {label: "Tractors / Trailers", value: fmtNum(tractors) + " / " + fmtNum(trailers), sub: "insured equipment mix"},
+    {label: "Highest Insured Unit", value: highest ? fmtUSD(highest) : "—", sub: "largest declared value in view"},
+  ];
+  document.getElementById("insurance-ticker").innerHTML = tiles.map(t => `<div class="tile ${t.cls || ""}"><div class="label">${t.label}</div><div class="value mono">${t.value}</div><div class="sub">${t.sub}</div></div>`).join("");
+}
+function renderInsuranceCharts(rows) {
+  const grid = document.getElementById("insurance-grid");
+  grid.innerHTML = "";
+  const byType = groupBy(rows, "assetType");
+  const typeOrder = ASSET_TYPE_ORDER.filter(t => t !== "RBOX");
+
+  const coveragePanel = panel("Insured Units by Equipment Type", "count of units on the Transafe PD schedule", "chart-insurance-coverage");
+  grid.appendChild(coveragePanel);
+  verticalBarChart(document.getElementById("chart-insurance-coverage"), typeOrder.map(type => {
+    const group = byType.get(type) || [];
+    return {label: ASSET_TYPE_LABEL[type], value: group.length, color: getComputedColor(ASSET_TYPE_COLOR[type]), tooltip: `<b>${ASSET_TYPE_LABEL[type]}</b><br>${group.length} insured units`};
+  }), {width: 380, height: 220, format: fmtNum});
+
+  const valuePanel = panel("Total Insured Value by Equipment Type", "sum of Transafe declared values", "chart-insurance-value");
+  grid.appendChild(valuePanel);
+  verticalBarChart(document.getElementById("chart-insurance-value"), typeOrder.map(type => {
+    const value = (byType.get(type) || []).reduce((s, r) => s + (Number(r.insuredValue) || 0), 0);
+    return {label: ASSET_TYPE_LABEL[type], value, color: getComputedColor(ASSET_TYPE_COLOR[type]), tooltip: `<b>${ASSET_TYPE_LABEL[type]}</b><br>${fmtUSDFull(value)}`};
+  }), {width: 380, height: 220, format: fmtUSD});
+
+  const topPanel = panel("Highest-Insured Units", "top 8 in the current selection", "chart-insurance-top", true);
+  grid.appendChild(topPanel);
+  const topRows = [...rows].sort((a, b) => b.insuredValue - a.insuredValue).slice(0, 8).map(row => ({
+    label: row.assetId, value: row.insuredValue,
+    tooltip: `<b>${row.assetId}</b> · ${ASSET_TYPE_LABEL[row.assetType] || row.assetType}<br>${[row.year, row.make, row.model].filter(Boolean).join(" ") || "Details unavailable"}<br>Owner: ${row.owner || "—"}<br>Insured: <b>${fmtUSDFull(row.insuredValue)}</b>`,
+  }));
+  diverging(document.getElementById("chart-insurance-top"), topRows, {width: 900, height: 260});
+}
+function renderInsuranceTable(rows) {
+  const sorted = [...rows].sort((a, b) => {
+    let av = a[insuranceState.sortKey], bv = b[insuranceState.sortKey];
+    if (av == null) av = insuranceState.sortDir === 1 ? Infinity : -Infinity;
+    if (bv == null) bv = insuranceState.sortDir === 1 ? Infinity : -Infinity;
+    if (typeof av === "string") return av.localeCompare(bv) * insuranceState.sortDir;
+    return (av - bv) * insuranceState.sortDir;
+  });
+  const shown = sorted.slice(0, 200);
+  document.getElementById("insurance-table-body").innerHTML = shown.map(row => `<tr>
+    <td class="mono"><strong>${escapeHtml(row.assetId)}</strong></td>
+    <td><span class="type-chip">${escapeHtml(ASSET_TYPE_LABEL[row.assetType] || row.assetType)}</span></td>
+    <td class="num">${escapeHtml(row.year || "—")}</td><td>${escapeHtml([row.make, row.model].filter(Boolean).join(" ") || "—")}</td>
+    <td>${escapeHtml(row.owner || "—")}</td><td>${escapeHtml(row.status || "—")}</td>
+    <td class="num"><strong>${fmtUSDFull(row.insuredValue)}</strong></td>
+  </tr>`).join("");
+  document.getElementById("insurance-table-note").textContent = `Showing ${shown.length} of ${rows.length} insured units`;
+}
+function updateInsurance() {
+  const rows = filteredInsurance();
+  document.getElementById("insurance-filter-count").textContent = `${rows.length} of ${LEASE_DATA.meta.insuredCount} insured units match`;
+  renderInsuranceTicker(rows);
+  renderInsuranceCharts(rows);
+  renderInsuranceTable(rows);
+  document.querySelectorAll("#filter-insurancetype .pill").forEach(b => b.setAttribute("aria-pressed", insuranceState.assetType === b.dataset.value ? "true" : "false"));
+}
+window.addEventListener("resize", () => { if (currentView === "insurance") renderInsuranceCharts(filteredInsurance()); });
+
 /* ---------------- View switch ---------------- */
 const ALL_VIEWS = ["overview", "fleet", "assets", "trailers", "maintenance", "insurance", "lease", "revenue", "sources"];
 let currentView = "fleet";
@@ -2411,11 +2777,21 @@ function setView(view) {
     document.getElementById("page-meta").innerHTML = `Full asset register &mdash; <span class="mono">${ASSET_DATA.meta.assetCount}</span> assets (tractors, trailers, roll-off boxes) from <span class="mono">Dim_Equipment</span>: ${Object.entries(ASSET_DATA.meta.byType).map(([k,v]) => `${v} ${ASSET_TYPE_LABEL[k] || k}`).join(", ")}.`;
     document.getElementById("theme-note").textContent = "Service Status is 'Active' fleet-wide — no retirement tracking in this source yet";
     renderAssetCharts(filteredAssets());
+  } else if (view === "trailers") {
+    document.getElementById("page-title").textContent = "Trailer Master";
+    document.getElementById("page-meta").innerHTML = `<span class="mono">${fmtNum(trailerMasterRows.length)}</span> trailer records in the lease/insurance register.`;
+    document.getElementById("theme-note").textContent = "Roll-off boxes counted separately from towable trailers";
+    updateTrailerMaster();
   } else if (view === "maintenance") {
     document.getElementById("page-title").textContent = "Maintenance & Cost per Mile";
     document.getElementById("page-meta").innerHTML = `<span class="mono">${MAINT_DATA.meta.workOrderCount}</span> tractor work orders, <span class="mono">${MAINT_DATA.meta.dateRange.join(" to ")}</span>, from <span class="mono">Fact_Maintenance_WO</span> (RTA), plus <span class="mono">${MAINT_DATA.meta.pmDueCount}</span> PM due items (<span class="mono">${MAINT_DATA.meta.pmDuePastDueCount}</span> past due) &mdash; automated daily pull, last refreshed <span class="mono">${MAINT_DATA.meta.pmDueSource.match(/last refreshed ([\d-]+)/)?.[1] ?? "unknown"}</span>.`;
     document.getElementById("theme-note").textContent = "Cost/mile excludes tractors below " + MIN_ANNUAL_MILES.toLocaleString() + " annualized miles (unreliable ratio)";
     renderMaintCharts(filteredMaintTractors(), filteredWorkOrders(filteredMaintTractors()));
+  } else if (view === "insurance") {
+    document.getElementById("page-title").textContent = "Equipment Insurance";
+    document.getElementById("page-meta").innerHTML = `<span class="mono">${LEASE_DATA.meta.insuredCount}</span> units on the Transafe PD schedule, <span class="mono">${fmtUSD(LEASE_DATA.meta.insuredSum)}</span> total declared value.`;
+    document.getElementById("theme-note").textContent = "Insured Value = Transafe PD schedule ($50K+ tracked only)";
+    updateInsurance();
   } else if (view === "lease") {
     document.getElementById("page-title").textContent = "Leased Equipment";
     document.getElementById("page-meta").innerHTML = `<span class="mono">${LEASE_DATA.meta.insuredCount}</span> of <span class="mono">${LEASE_DATA.meta.unitCount}</span> tractors/trailers carry a Transafe PD insured value; <span class="mono">${LEASE_DATA.meta.leasedCount}</span> are leased-in from ${Object.keys(LEASE_DATA.meta.lessorCounts).length} vendors at <span class="mono">${fmtUSDFull(LEASE_DATA.meta.leasedSum)}</span>/mo.`;
@@ -2439,8 +2815,12 @@ renderQA();
 update();
 renderAssetFilters();
 updateAssets();
+renderTrailerMasterFilters();
+updateTrailerMaster();
 renderMaintFilters();
 updateMaint();
+renderInsuranceFilters();
+updateInsurance();
 renderLeaseFilters();
 updateLease();
 if (Array.isArray(SOURCE_DATA?.files)) updateFeedHealth(SOURCE_DATA.files);

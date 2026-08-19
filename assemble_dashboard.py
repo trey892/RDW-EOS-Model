@@ -45,6 +45,13 @@ OPTIONAL_PLACEHOLDERS = {
     "/*__SOURCE_DATA__*/": (OUT_DIR / "sources_data.json", {"checkedAt": None, "files": []}),
 }
 
+# revenue_module.json is itself a JSON-encoded STRING (an HTML document), not an
+# object, so it doesn't fit REQUIRED/OPTIONAL_PLACEHOLDERS' dict-default shape --
+# handled separately below with a string default instead.
+REVENUE_MODULE_MARKER = "/*__REVENUE_MODULE_HTML__*/"
+REVENUE_MODULE_JSON = OUT_DIR / "revenue_module.json"
+REVENUE_MODULE_DEFAULT = "<p style=\"padding:24px;font:14px system-ui\">Revenue module unavailable this build.</p>"
+
 
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -63,6 +70,11 @@ def main():
             raise ValueError(f"Marker {marker} not found in {TEMPLATE}")
         payload = data_file.read_text(encoding="utf-8") if data_file.exists() else json.dumps(default)
         html = html.replace(marker, payload, 1)
+
+    if REVENUE_MODULE_MARKER not in html:
+        raise ValueError(f"Marker {REVENUE_MODULE_MARKER} not found in {TEMPLATE}")
+    revenue_payload = REVENUE_MODULE_JSON.read_text(encoding="utf-8") if REVENUE_MODULE_JSON.exists() else json.dumps(REVENUE_MODULE_DEFAULT)
+    html = html.replace(REVENUE_MODULE_MARKER, revenue_payload, 1)
 
     OUT.write_text(html, encoding="utf-8")
     print(f"Wrote {OUT} ({OUT.stat().st_size:,} bytes)")

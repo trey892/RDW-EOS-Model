@@ -42,6 +42,7 @@ import build_dashboard_data
 import build_asset_data
 import build_maintenance_data
 import build_sources_data
+import build_revenue_module
 import assemble_dashboard
 
 
@@ -85,6 +86,13 @@ def main():
 
     print("\n--- build_sources_data ---")
     build_sources_data.main()
+
+    if build_revenue_module.REVENUE_SRC.exists():
+        print("\n--- build_revenue_module ---")
+        build_revenue_module.main()
+    else:
+        print(f"\n--- build_revenue_module skipped (no {build_revenue_module.REVENUE_SRC} -- "
+              "keeping prior output, or 'unavailable' placeholder if none exists yet) ---")
 
     print("\n--- assemble_dashboard ---")
     assemble_dashboard.main()

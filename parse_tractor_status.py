@@ -21,6 +21,12 @@ hand-supplied export, so this is now part of the automated daily refresh.
 RTA-internal type codes, not yet mapped to friendly labels (Chemical/Waste/
 Straight Truck style names seen elsewhere); shown as-is until a real mapping
 is confirmed rather than guessed.
+
+`rawSheetStatus` is the sheet's own "Status" column (blank / "Open" / "Yard
+Truck" / "In Shop"), captured alongside dispatchStatus per Trey's 2026-08
+request to show both side by side on the dashboard -- it is NOT used to
+derive dispatchStatus or any other computed field, since it's the same
+column called out above as unreliable against Assigned Driver.
 """
 import json
 from pathlib import Path
@@ -56,9 +62,12 @@ def main():
         else:
             dispatch_status = "ASSIGNED"  # a real driver code is in the field
 
+        raw_sheet_status = (r[idx["Status"]] or "").strip()
+
         records[tractor] = {
             "assignedDriverRaw": assigned_driver_raw,
             "dispatchStatus": dispatch_status,
+            "rawSheetStatus": raw_sheet_status or None,  # sheet's own Status column, shown for reference only -- see module docstring
             "dateAssigned": r[idx["Date Assigned"]],
             "dispatcher": r[idx["Dispatcher"]],
             "fleet": r[idx["Fleet"]],

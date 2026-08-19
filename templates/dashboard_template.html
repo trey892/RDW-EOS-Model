@@ -1591,7 +1591,7 @@ function renderCharts(rows) {
     .map(t => {
       const availabilityClass = t.downStatus != null ? "repair" : t.dispatchStatus === "SPARE" ? "spare" : "open";
       const availabilityLabel = availabilityClass === "repair" ? "Pending Repairs" : availabilityClass === "spare" ? "Spare Units" : "Open / Not Seated";
-      return {assetId: t.assetId, fleetCode: t.terminal, status: t.dispatchStatus, assignedDriver: t.assignedDriverRaw, style: t.style || "Unclassified", availabilityClass, availabilityLabel};
+      return {assetId: t.assetId, fleetCode: t.terminal, status: t.dispatchStatus, sheetStatus: t.rawSheetStatus, assignedDriver: t.assignedDriverRaw, style: t.style || "Unclassified", availabilityClass, availabilityLabel};
     })
     .sort((a, b) => {
       const order = {open: 0, spare: 1, repair: 2};
@@ -1613,7 +1613,7 @@ function renderCharts(rows) {
   if (rtdUnits.length) {
     const rtdWrap = document.createElement("div");
     rtdWrap.className = "table-wrap rtd-availability-table";
-    rtdWrap.innerHTML = `<table><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>RTD Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.status || "—")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
+    rtdWrap.innerHTML = `<table><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>RTD Status</th><th>Sheet Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.status || "—")}</td><td>${escapeHtml(u.sheetStatus || "blank")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
     pAvail.appendChild(rtdWrap);
   } else {
     const empty = document.createElement("div");
@@ -1623,7 +1623,7 @@ function renderCharts(rows) {
   }
   const rtdNote = document.createElement("div");
   rtdNote.className = "rtd-availability-note";
-  rtdNote.textContent = "Open = RTD dispatch status AVAILABL. Spare = SPARE. Pending Repairs = active Down Report record. RTD status takes precedence over driver assignment.";
+  rtdNote.textContent = "Open = RTD dispatch status AVAILABL. Spare = SPARE. Pending Repairs = active Down Report record. RTD Status (from Assigned Driver, SOP-compliant) drives these categories. Sheet Status is the RTD sheet's own Status column (Open/Yard Truck/In Shop/blank) shown for reference only — it does not reliably agree with RTD Status, so it is not used to classify units.";
   pAvail.appendChild(rtdNote);
   grid.appendChild(pAvail);
 

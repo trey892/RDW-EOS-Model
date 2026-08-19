@@ -126,6 +126,7 @@ def main():
             "fuelGallons": g(e, "Fuel Gallons"),
             "dispatchStatus": status_row["dispatchStatus"] if status_row else None,
             "assignedDriverRaw": status_row["assignedDriverRaw"] if status_row else None,
+            "rawSheetStatus": status_row.get("rawSheetStatus") if status_row else None,
             "style": status_row["style"] if status_row else None,
             "currentHubLive": status_row["currentHub"] if status_row else None,
             "downDays": down_row["downDays"] if down_row else None,

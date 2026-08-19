@@ -660,6 +660,34 @@
     text-decoration: none; white-space: nowrap;
   }
   .todo-link:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- Tile / panel / KPI drilldown drawer ---------- */
+  .tile.rdw-drillable, .panel.rdw-drillable { cursor: pointer; position: relative; }
+  .rdw-metric-drillable { cursor: pointer; position: relative; transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+  .rdw-metric-drillable:hover { transform: translateY(-1px); }
+  .rdw-metric-drillable:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .tile.rdw-drillable:hover { background: var(--accent-wash); }
+  .tile.rdw-drillable:focus-visible, .panel.rdw-drillable:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+  .panel.rdw-drillable:hover { border-color: var(--accent); }
+  .panel.rdw-drillable .panel-head::after { content: "View detail"; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+
+  .rdw-drill-backdrop { position: fixed; inset: 0; background: rgba(5,8,12,.52); opacity: 0; pointer-events: none; transition: opacity .18s ease; z-index: 190; }
+  .rdw-drill-backdrop.open { opacity: 1; pointer-events: auto; }
+  .rdw-drill-drawer { position: fixed; top: 0; right: 0; width: min(820px,94vw); height: 100dvh; background: var(--surface); color: var(--ink); border-left: 3px solid var(--accent); box-shadow: -18px 0 42px rgba(0,0,0,.28); transform: translateX(102%); transition: transform .22s ease; z-index: 191; display: flex; flex-direction: column; }
+  .rdw-drill-drawer.open { transform: translateX(0); }
+  .rdw-drill-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; }
+  .rdw-drill-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+  .rdw-drill-title { margin: 3px 0 2px; font-size: 20px; line-height: 1.2; }
+  .rdw-drill-summary { color: var(--ink-2); font-size: 12px; }
+  .rdw-drill-close { appearance: none; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); border-radius: 8px; width: 36px; height: 36px; font-size: 22px; line-height: 1; cursor: pointer; flex: none; }
+  .rdw-drill-tools { display: flex; gap: 10px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+  .rdw-drill-search { flex: 1; min-width: 210px; border: 1px solid var(--border); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 9px 11px; font: inherit; }
+  .rdw-drill-export { appearance: none; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 8px; padding: 9px 13px; font-weight: 750; cursor: pointer; }
+  .rdw-drill-body { flex: 1; overflow: auto; padding: 0 20px 24px; }
+  .rdw-drill-body table.data-table th { position: sticky; top: 0; z-index: 1; }
+  .rdw-drill-empty { padding: 34px 4px; color: var(--muted); }
+  body.rdw-drill-open { overflow: hidden; }
+  @media (max-width: 640px) { .rdw-drill-drawer { width: 100vw; } .rdw-drill-head { padding: 14px; } .rdw-drill-tools, .rdw-drill-body { padding-left: 14px; padding-right: 14px; } }
 </style>
 
 <header class="gantry">
@@ -698,6 +726,23 @@
   <span class="feed-health-chip" data-feed="drops">Direct drops checking</span>
   <span class="feed-health-mode">Published snapshot</span>
 </div>
+
+<div class="rdw-drill-backdrop" id="rdw-drill-backdrop"></div>
+<aside class="rdw-drill-drawer" id="rdw-drill-drawer" aria-hidden="true" aria-labelledby="rdw-drill-title">
+  <div class="rdw-drill-head">
+    <div>
+      <div class="rdw-drill-eyebrow">Dashboard drill-down</div>
+      <h2 class="rdw-drill-title" id="rdw-drill-title">Detail</h2>
+      <div class="rdw-drill-summary" id="rdw-drill-summary"></div>
+    </div>
+    <button type="button" class="rdw-drill-close" id="rdw-drill-close" aria-label="Close detail">&times;</button>
+  </div>
+  <div class="rdw-drill-tools">
+    <input class="rdw-drill-search" id="rdw-drill-search" type="search" placeholder="Search these records&hellip;">
+    <button type="button" class="rdw-drill-export" id="rdw-drill-export">Export CSV</button>
+  </div>
+  <div class="rdw-drill-body" id="rdw-drill-body"></div>
+</aside>
 
 <div class="rdw-record-backdrop" id="rdw-record-backdrop" aria-hidden="true">
   <section class="rdw-record-modal" role="dialog" aria-modal="true" aria-labelledby="rdw-record-title">
@@ -1603,6 +1648,7 @@ function renderCharts(rows) {
   const rtdUnits = RTD_AVAILABILITY_UNITS.filter(u =>
     Object.entries(rtdAvailabilityFilters).every(([key, selected]) => !selected || String(u[key] || "").toUpperCase() === selected.toUpperCase())
   );
+  window.RTD_AVAILABILITY_UNITS_LATEST = rtdUnits;
   const rtdCounts = {open: 0, spare: 0, repair: 0};
   rtdUnits.forEach(u => { if (rtdCounts[u.availabilityClass] != null) rtdCounts[u.availabilityClass] += 1; });
   const rtdSummary = document.createElement("div");
@@ -1613,7 +1659,7 @@ function renderCharts(rows) {
   if (rtdUnits.length) {
     const rtdWrap = document.createElement("div");
     rtdWrap.className = "table-wrap rtd-availability-table";
-    rtdWrap.innerHTML = `<table><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>RTD Status</th><th>Sheet Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.status || "—")}</td><td>${escapeHtml(u.sheetStatus || "blank")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
+    rtdWrap.innerHTML = `<table class="data-table"><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>RTD Status</th><th>Sheet Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.status || "—")}</td><td>${escapeHtml(u.sheetStatus || "blank")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
     pAvail.appendChild(rtdWrap);
   } else {
     const empty = document.createElement("div");
@@ -1636,6 +1682,7 @@ function renderCharts(rows) {
      known: which units are flagged, and their terminal/style from the RTD
      pull, rather than fabricating status fields. */
   const paccarUnits = rows.filter(t => t.isPaccarLease);
+  window.PACCAR_UNITS_LATEST = paccarUnits;
   if (paccarUnits.length) {
     const pPaccar = panel("PACCAR Lease Turn-In Status", "flagged units &middot; inspection/repair status not yet available", "paccar-svg-unused", true);
     pPaccar.querySelector("svg").remove();
@@ -3452,13 +3499,14 @@ window.addEventListener("resize", () => {
       if (e.target.closest("#rdw-record-close")) { closeRecord(); return; }
       if (e.target === backdrop) { closeRecord(); return; }
       const row = e.target.closest("table.data-table tbody tr");
-      if (!row || !row.closest("section.view")) return;
+      if (!row || !(row.closest("section.view") || row.closest("#rdw-drill-drawer"))) return;
       if (e.target.closest("a,button,input,select")) return;
       const table = row.closest("table.data-table");
       const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
       const cells = Array.from(row.children).map(td => td.textContent.trim());
       if (!headers.length || cells.length !== headers.length) return;
       const panelTitle = row.closest(".panel")?.querySelector(".panel-title")?.textContent
+        || document.getElementById("rdw-drill-title")?.textContent
         || document.getElementById("page-title")?.textContent
         || "Record detail";
       openRecord(headers, cells, row, panelTitle);
@@ -3494,5 +3542,234 @@ window.addEventListener("resize", () => {
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initRdwRowDrilldown, { once: true });
   else initRdwRowDrilldown();
+})();
+</script>
+
+<script>
+(function () {
+  function initRdwPanelDrilldown() {
+    const drawer = document.getElementById("rdw-drill-drawer");
+    const backdrop = document.getElementById("rdw-drill-backdrop");
+    const titleNode = document.getElementById("rdw-drill-title");
+    const summaryNode = document.getElementById("rdw-drill-summary");
+    const bodyNode = document.getElementById("rdw-drill-body");
+    const searchNode = document.getElementById("rdw-drill-search");
+    const exportButton = document.getElementById("rdw-drill-export");
+    if (!drawer || typeof filtered !== "function") return;
+    let lastFocus = null;
+    let detail = { title: "Detail", rows: [], columns: [], visible: [] };
+
+    const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+    const text = v => String(v == null ? "" : v).trim();
+    const norm = v => text(v).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const money = v => v == null || v === "" ? "—" : fmtUSDFull(Number(v));
+    const number = v => v == null || v === "" ? "—" : fmtNum(Number(v));
+    const pctFmt = v => v == null || v === "" ? "—" : Number(v).toFixed(1) + "%";
+    const col = (key, label, format) => ({ key, label, format: format || (v => v == null || v === "" ? "—" : String(v)) });
+
+    const fleetColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("division","Division"),col("ownership","Ownership"),col("dispatchStatus","RTD Status"),col("revenue","Revenue",money),col("contribution","Contribution",money),col("deadheadPct","Deadhead",pctFmt),col("annualizedDistance","Annualized Miles",number)];
+    const rtdAvailabilityColumns = [col("assetId","Tractor"),col("fleetCode","Fleet"),col("status","RTD Status"),col("sheetStatus","Sheet Status"),col("assignedDriver","Assigned Driver"),col("style","Style")];
+    const assetColumns = [col("assetId","Asset"),col("assetType","Type",v => ASSET_TYPE_LABEL[v] || v || "—"),col("ownership","Ownership"),col("division","Division"),col("terminal","Terminal"),col("year","Year"),col("netBookValue","Net Book Value",money)];
+    const leaseColumns = [col("assetId","Unit"),col("assetType","Type",v => ASSET_TYPE_LABEL[v] || v || "—"),col("year","Year"),col("owner","Owner"),col("insuredValue","Insured Value",money),col("_pd","Monthly PD",(v,row) => { const m = pdInsuranceMonthly(row); return m == null ? "—" : fmtUSDFull(m); }),col("monthlyLeaseRate","Monthly Lease",money),col("lessor","Lessor")];
+    const trailerColumns = [col("assetId","Unit"),col("_type","Equipment Type",(v,row) => TRAILER_MASTER_TYPE_LABELS[trailerMasterType(row)] || trailerMasterType(row) || "Unclassified"),col("_fleet","Fleet",(v,row) => trailerMasterFleet(row)),col("_owner","Owner",(v,row) => trailerMasterOwner(row)),col("_status","Status",(v,row) => trailerMasterStatus(row)),col("year","Year"),col("make","Make"),col("insuredValue","Insured Value",money)];
+    const pmColumns = [col("assetId","Tractor"),col("pmDescription","PM"),col("cycleType","Basis"),col("dueAt","Due At"),col("_dueIn","Due In",(v,row) => row.dueIn != null ? row.dueIn.toLocaleString() + (row.dueUnit === "miles" ? " mi" : " days") : "—"),col("dueStatus","Status")];
+    const woColumns = [col("assetId","Tractor"),col("workOrderKey","Work Order"),col("openedDate","Opened"),col("closedDate","Closed"),col("totalCost","Cost",money)];
+    const unbilledColumns = [col("terminal","Terminal"),col("uniqueOrders","Unique Orders",number),col("ready","Ready",number),col("notReady","Not Ready",number),col("totalCharges","Charges",money),col("oldestDays","Oldest Days",number)];
+    const pendingColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("downDays","Down Days",number),col("downStatus","Status"),col("downLocation","Location"),col("downIssue","Issue"),col("downEtaCompletion","ETA")];
+    const orientationColumns = [col("firstName","First"),col("lastName","Last"),col("terminal","Terminal"),col("returningDriver","Returning"),col("ownership","CO/OO")];
+    const paccarColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("styleKey","Style"),col("paccarMaturityDate","Maturity/Status")];
+
+    function sectionId(node) { return node.closest("section.view")?.id || "view-fleet"; }
+    function baseFor(section) {
+      if (section === "view-assets") return { rows: filteredAssets(), columns: assetColumns };
+      if (section === "view-maintenance") return { rows: filteredMaintTractors(), columns: fleetColumns };
+      if (section === "view-lease") return { rows: filteredLease(), columns: leaseColumns };
+      if (section === "view-insurance") return { rows: filteredInsurance(), columns: leaseColumns };
+      if (section === "view-trailers") return { rows: trailerMasterFilteredRows(), columns: trailerColumns };
+      return { rows: filtered(), columns: fleetColumns };
+    }
+
+    function tileDetail(tile) {
+      const section = sectionId(tile);
+      const label = text(tile.querySelector(".label")?.textContent);
+      const key = norm(label);
+      const base = baseFor(section);
+      let rows = [...base.rows], columns = base.columns;
+      if (section === "view-fleet") {
+        if (key.includes("confirmed loss")) rows = rows.filter(r => Number(r.revenue) > 0 && Number(r.contribution) < 0);
+        else if (key.includes("zero revenue")) rows = rows.filter(r => Number(r.revenue) === 0);
+        else if (key.includes("open tractor")) rows = rows.filter(r => r.dispatchStatus === "AVAILABL");
+        else if (key.includes("avg fuel efficiency")) rows = rows.filter(r => r.mpg != null);
+        else if (key.includes("fuel") && key.includes("mile")) rows = rows.filter(r => r.ownership === "Company" && Number(r.fuelCost) > 0 && r.annualizedDistance != null);
+        else if (key.includes("deadhead")) rows = rows.filter(r => r.deadheadPct != null);
+      } else if (section === "view-assets") {
+        if (key.includes("tractors")) rows = rows.filter(r => r.assetType === "TRACTOR");
+        else if (key.includes("trailers")) rows = rows.filter(r => r.assetType === "TRAILER");
+        else if (key.includes("roll off")) rows = rows.filter(r => r.assetType === "RBOX");
+        else if (key.includes("rdw owned")) rows = rows.filter(r => r.rdwOwned === "Yes");
+        else if (key.includes("dual registry")) rows = rows.filter(r => r.ambiguousId);
+      } else if (section === "view-maintenance") {
+        const woRows = typeof filteredWorkOrders === "function" ? filteredWorkOrders(rows) : [];
+        const pmRows = typeof filteredPmDue === "function" ? filteredPmDue(rows) : [];
+        if (key.includes("work orders") || key.includes("total wo cost")) { rows = woRows; columns = woColumns; }
+        else if (key.includes("pms past due")) { rows = pmRows.filter(p => p.dueStatus === "Past Due"); columns = pmColumns; }
+        else if (key.includes("tractors with a past due pm")) { rows = pmRows.filter(p => p.dueStatus === "Past Due"); columns = pmColumns; }
+        else if (key.includes("excluded from")) rows = rows.filter(r => costPerMile(r).excluded);
+      } else if (section === "view-lease") {
+        if (key.includes("on pd schedule") || key.includes("total insured")) rows = rows.filter(r => r.insuredValue != null);
+        else if (key.includes("leased in") || key.includes("monthly lease")) rows = rows.filter(r => r.monthlyLeaseRate != null);
+      } else if (section === "view-trailers") {
+        if (key.includes("active towable")) rows = rows.filter(r => trailerMasterStatus(r) === "Active" && TRAILER_MASTER_TOWABLE_TYPES.has(trailerMasterType(r)));
+        else if (key.includes("active roll off")) rows = rows.filter(r => trailerMasterStatus(r) === "Active" && trailerMasterType(r) === "RBOX");
+        else if (key.includes("out of service")) rows = rows.filter(r => trailerMasterStatus(r) === "Out of Service");
+        else if (key.includes("unclassified")) rows = rows.filter(r => !trailerMasterType(r));
+      }
+      return { title: label, rows, columns };
+    }
+
+    function nearestChartLabel(svg, target) {
+      const box = target.getBoundingClientRect(); const tx = box.left + box.width / 2, ty = box.top + box.height / 2;
+      const labels = [...svg.querySelectorAll(".cat-label")].filter(n => text(n.textContent));
+      if (!labels.length) return "";
+      labels.sort((a, b) => { const ar = a.getBoundingClientRect(), br = b.getBoundingClientRect(); const ad = Math.hypot(ar.left + ar.width / 2 - tx, ar.top + ar.height / 2 - ty); const bd = Math.hypot(br.left + br.width / 2 - tx, br.top + br.height / 2 - ty); return ad - bd; });
+      return text(labels[0].textContent);
+    }
+
+    function panelDetail(panel, target) {
+      const section = sectionId(panel);
+      const panelTitle = text(panel.querySelector(".panel-title")?.textContent) || "Panel detail";
+      const svg = target.closest("svg") || panel.querySelector("svg");
+      const label = svg && target.closest(".bar") ? nearestChartLabel(svg, target.closest(".bar")) : "";
+      const pkey = norm(panelTitle), lkey = norm(label);
+      const base = baseFor(section);
+      let rows = [...base.rows], columns = base.columns;
+      if (pkey.includes("available truck")) {
+        rows = RTD_AVAILABILITY_UNITS_LATEST || [];
+        columns = rtdAvailabilityColumns;
+      } else if (pkey.includes("paccar")) {
+        rows = PACCAR_UNITS_LATEST || [];
+        columns = paccarColumns;
+      } else if (pkey.includes("orientation")) {
+        return { title: panelTitle, rows: [...(ORIENTATION_DATA?.drivers || [])], columns: orientationColumns };
+      } else if (pkey.includes("unbilled")) {
+        rows = UNBILLED_ORDER_DATA?.rows || [];
+        columns = unbilledColumns;
+      } else if (pkey.includes("pm due") || pkey.includes("pm list")) {
+        rows = typeof filteredPmDue === "function" ? filteredPmDue(rows) : [];
+        columns = pmColumns;
+      } else if (pkey.includes("work order") || pkey.includes("highest cost")) {
+        rows = typeof filteredWorkOrders === "function" ? filteredWorkOrders(rows) : [];
+        columns = woColumns;
+      } else if (pkey.includes("omitted")) {
+        rows = rows.filter(r => maintenanceOmissionReason(r));
+      } else if (pkey.includes("units by ownership") || pkey.includes("contribution by ownership")) {
+        if (lkey) rows = rows.filter(r => norm(r.ownership) === lkey || lkey.includes(norm(r.ownership).replace(" purchase","")));
+      } else if (pkey.includes("division")) {
+        if (lkey) rows = rows.filter(r => norm(r.division) === lkey);
+      }
+      return { title: panelTitle + (label ? " — " + label : ""), rows, columns };
+    }
+
+    function metricLabel(node) {
+      return text(node.querySelector(".executive-kpi-label,.rk-label,.orientation-total-label,.executive-alert-main")?.childNodes?.[0]?.textContent
+        || node.querySelector(".executive-kpi-label,.rk-label,.orientation-total-label")?.textContent
+        || node.textContent);
+    }
+
+    function metricDetail(node) {
+      const label = text(metricLabel(node));
+      const key = norm(label);
+      const section = sectionId(node);
+      if (node.matches(".executive-kpi,.executive-alert")) {
+        const tractors = Array.isArray(DATA?.tractors) ? DATA.tractors : [];
+        if (key.includes("available truck")) return { title: label, rows: tractors.filter(t => isAvailableStatus(t.dispatchStatus)), columns: fleetColumns };
+        if (key.includes("down now") || key.includes("long term downtime") || key.includes("units down")) return { title: label, rows: tractors.filter(t => t.downStatus != null), columns: fleetColumns };
+        if (key.includes("repair etas missing")) return { title: label, rows: tractors.filter(t => t.downStatus != null && !t.downEtaCompletion), columns: fleetColumns };
+        if (key.includes("unbilled") || key.includes("billing exposure")) return { title: label, rows: UNBILLED_ORDER_DATA?.rows || [], columns: unbilledColumns };
+        if (key.includes("pm") ) { const pmDue = Array.isArray(MAINT_DATA?.pmDue) ? MAINT_DATA.pmDue : []; return { title: label, rows: pmDue.filter(p => p.dueStatus === "Past Due"), columns: pmColumns }; }
+        if (key.includes("orientation")) return { title: label, rows: [...(ORIENTATION_DATA?.drivers || [])], columns: orientationColumns };
+        if (key.includes("lease")) { const leased = (LEASE_DATA?.units || []).filter(u => u.monthlyLeaseRate); return { title: label, rows: leased, columns: leaseColumns }; }
+      }
+      if (node.matches(".readiness-kpi")) {
+        const rows = filtered();
+        if (key.includes("not reported down")) return { title: label, rows: rows.filter(r => r.downStatus == null), columns: fleetColumns };
+        return { title: label, rows: rows.filter(r => r.downStatus != null), columns: fleetColumns };
+      }
+      if (node.matches(".orientation-total,.orientation-row,.orientation-chip")) {
+        let rows = [...(ORIENTATION_DATA?.drivers || [])];
+        if (node.matches(".orientation-row")) { const fleet = text(node.querySelector(".orientation-fleet")?.textContent); rows = rows.filter(r => r.terminal === fleet); }
+        else if (key.includes("company") && !key.includes("owner operator")) rows = rows.filter(r => r.ownership === "CO");
+        else if (key.includes("owner operator")) rows = rows.filter(r => r.ownership === "OO");
+        return { title: label || "Orientation Inbound", rows, columns: orientationColumns };
+      }
+      const base = baseFor(section);
+      return { title: label || "Metric detail", rows: base.rows, columns: base.columns };
+    }
+
+    function render() {
+      const q = norm(searchNode.value);
+      detail.visible = q ? detail.rows.filter(row => detail.columns.some(c => norm(c.format(row[c.key], row)).includes(q))) : detail.rows;
+      summaryNode.textContent = fmtNum(detail.visible.length) + (detail.visible.length === 1 ? " matching record" : " matching records") + (detail.visible.length !== detail.rows.length ? " of " + fmtNum(detail.rows.length) : "") + " · current dashboard filters preserved";
+      if (!detail.visible.length) { bodyNode.innerHTML = '<div class="rdw-drill-empty">No matching records. This figure may be an aggregate with no row-level match under the current filters.</div>'; return; }
+      const rows = detail.visible.slice(0, 1000);
+      bodyNode.innerHTML = '<div class="table-wrap"><table class="data-table"><thead><tr>' + detail.columns.map(c => '<th>' + esc(c.label) + '</th>').join("") + '</tr></thead><tbody>' + rows.map(row => '<tr>' + detail.columns.map(c => '<td>' + esc(c.format(row[c.key], row)) + '</td>').join("") + '</tr>').join("") + '</tbody></table></div>' + (detail.visible.length > 1000 ? '<div class="panel-note" style="padding-top:10px">Showing the first 1,000 records. Export CSV includes all matching records.</div>' : "");
+    }
+
+    function openDetail(next, trigger) {
+      detail = { ...next, visible: next.rows };
+      lastFocus = trigger;
+      titleNode.textContent = next.title;
+      searchNode.value = "";
+      render();
+      drawer.classList.add("open"); backdrop.classList.add("open");
+      drawer.setAttribute("aria-hidden", "false");
+      document.body.classList.add("rdw-drill-open");
+      setTimeout(() => searchNode.focus(), 30);
+    }
+    function closeDetail() {
+      drawer.classList.remove("open"); backdrop.classList.remove("open");
+      drawer.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("rdw-drill-open");
+      if (lastFocus) lastFocus.focus();
+    }
+    function exportCsv() {
+      const quote = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+      const csv = [detail.columns.map(c => quote(c.label)).join(","), ...detail.visible.map(row => detail.columns.map(c => quote(c.format(row[c.key], row))).join(","))].join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = norm(detail.title).replace(/ /g, "-") + "-detail.csv"; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function markDrillables(root) {
+      root.querySelectorAll("section.view .ticker .tile").forEach(node => { node.classList.add("rdw-drillable"); node.tabIndex = 0; node.setAttribute("role", "button"); node.setAttribute("aria-label", "View details for " + text(node.querySelector(".label")?.textContent)); });
+      root.querySelectorAll("section.view .panel").forEach(node => { node.classList.add("rdw-drillable"); node.tabIndex = 0; node.setAttribute("role", "button"); node.setAttribute("aria-label", "View details for " + text(node.querySelector(".panel-title")?.textContent || "panel")); });
+      root.querySelectorAll("section.view .executive-kpi,section.view .executive-alert,section.view .readiness-kpi,section.view .orientation-total,section.view .orientation-row,section.view .orientation-chip").forEach(node => { node.classList.add("rdw-metric-drillable"); node.tabIndex = 0; node.setAttribute("role", "button"); node.setAttribute("aria-label", "View details for " + text(metricLabel(node))); });
+    }
+
+    document.addEventListener("click", e => {
+      if (e.target.closest("#rdw-drill-close")) { closeDetail(); return; }
+      if (e.target === backdrop) { closeDetail(); return; }
+      if (e.target.closest("#rdw-drill-export")) { exportCsv(); return; }
+      if (e.target.closest("table.data-table")) return; // row clicks handled by the record-modal delegate
+      const tile = e.target.closest("section.view .ticker .tile.rdw-drillable");
+      if (tile) { openDetail(tileDetail(tile), tile); return; }
+      const metric = e.target.closest(".rdw-metric-drillable");
+      if (metric && !e.target.closest("a,button,input,select")) { openDetail(metricDetail(metric), metric); return; }
+      const panel = e.target.closest("section.view .panel.rdw-drillable");
+      if (panel && !e.target.closest("button,a,input,select,table")) { openDetail(panelDetail(panel, e.target), panel); }
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && drawer.classList.contains("open")) { closeDetail(); return; }
+      if ((e.key === "Enter" || e.key === " ") && e.target.matches(".tile.rdw-drillable,.panel.rdw-drillable,.rdw-metric-drillable")) { e.preventDefault(); e.target.click(); }
+    });
+    searchNode.addEventListener("input", render);
+
+    new MutationObserver(() => markDrillables(document)).observe(document.body, { childList: true, subtree: true });
+    requestAnimationFrame(() => markDrillables(document));
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initRdwPanelDrilldown, { once: true });
+  else initRdwPanelDrilldown();
 })();
 </script>

@@ -512,6 +512,84 @@
     .trailer-source-banner { align-items:flex-start; }
     .trailer-pagination { justify-content:center; }
   }
+
+  /* ---------------- Fleet Readiness & Downtime Exposure ---------------- */
+  .readiness-kpis { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:2px; }
+  .readiness-kpi { background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:10px 11px; min-width:0; }
+  .readiness-kpi .rk-label { color:var(--muted); font-size:9.5px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }
+  .readiness-kpi .rk-value { color:var(--ink); font:700 21px/1.15 ui-monospace,monospace; margin-top:4px; }
+  .readiness-kpi .rk-sub { color:var(--ink-2); font-size:10.5px; margin-top:3px; }
+  .readiness-kpi.good .rk-value { color:var(--good); }
+  .readiness-kpi.warn .rk-value { color:var(--warning); }
+  .readiness-kpi.crit .rk-value { color:var(--critical); }
+  .readiness-alert { border-radius:7px; background:var(--accent-wash); color:var(--ink-2); font-size:10.5px; padding:7px 9px; margin-top:8px; }
+  .readiness-alert strong { color:var(--warning); }
+  .readiness-balance { border-top:1px solid var(--border); padding-top:9px; margin-top:8px; }
+  .readiness-balance-head { display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; margin-bottom:6px; }
+  .readiness-balance-head span:last-child { font-weight:500; letter-spacing:0; text-transform:none; text-align:right; }
+  .readiness-row { display:grid; grid-template-columns:38px minmax(90px,1fr) 30px; align-items:center; gap:7px; min-height:18px; font-size:10.5px; }
+  .readiness-term { color:var(--ink-2); font-weight:700; }
+  .readiness-track { position:relative; height:8px; border-radius:4px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden; }
+  .readiness-zero { position:absolute; top:-1px; bottom:-1px; left:50%; width:1px; background:var(--muted); opacity:.65; }
+  .readiness-fill { position:absolute; top:0; bottom:0; border-radius:3px; min-width:2px; }
+  .readiness-value { color:var(--ink); font-family:ui-monospace,monospace; font-weight:700; text-align:right; }
+  @media (max-width:440px) { .readiness-kpis { grid-template-columns:1fr; } }
+
+  /* ---------------- Orientation Inbound ---------------- */
+  .orientation-panel { align-self:stretch; min-height:100%; }
+  .orientation-hero { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; padding:14px 15px; border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:9px; background:linear-gradient(125deg, var(--accent-wash), var(--surface-2) 68%); }
+  .orientation-date-label { color:var(--muted); font-size:9.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+  .orientation-date { margin-top:4px; color:var(--ink); font-size:clamp(23px,3vw,31px); font-weight:800; letter-spacing:-.03em; line-height:1.05; }
+  .orientation-date-sub { margin-top:5px; color:var(--ink-2); font-size:11px; }
+  .orientation-total { min-width:76px; text-align:center; }
+  .orientation-total-value { color:var(--accent); font:800 35px/1 ui-monospace,monospace; }
+  .orientation-total-label { margin-top:5px; color:var(--muted); font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .orientation-section { border-top:1px solid var(--border); padding-top:10px; margin-top:10px; }
+  .orientation-section-head { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; color:var(--muted); font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+  .orientation-row { display:grid; grid-template-columns:52px minmax(90px,1fr) 34px; gap:8px; align-items:center; min-height:27px; }
+  .orientation-fleet { color:var(--ink); font-weight:800; }
+  .orientation-track { height:9px; overflow:hidden; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); }
+  .orientation-fill { display:block; height:100%; min-width:6px; border-radius:999px; background:var(--accent); }
+  .orientation-count { color:var(--ink); font-family:ui-monospace,monospace; font-weight:800; text-align:right; }
+  .orientation-mix { display:flex; flex-wrap:wrap; gap:6px; }
+  .orientation-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); color:var(--ink-2); font-size:10.5px; }
+  .orientation-chip strong { color:var(--ink); font-family:ui-monospace,monospace; }
+  .orientation-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .orientation-source { color:var(--muted); font-size:10px; }
+  .orientation-link { display:inline-flex; align-items:center; gap:5px; color:var(--accent); font-size:10.5px; font-weight:800; text-decoration:none; }
+  .orientation-link:hover { text-decoration:underline; }
+  @media (max-width:440px) { .orientation-hero { grid-template-columns:1fr; } .orientation-total { text-align:left; } }
+
+  /* ---------------- Available Trucks (RTD filterable) ---------------- */
+  .rtd-availability-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-bottom:10px; }
+  .rtd-availability-summary > div { padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
+  .rtd-availability-summary strong { display:block; color:var(--ink); font-size:19px; line-height:1; }
+  .rtd-availability-summary span { display:block; margin-top:4px; color:var(--muted); font-size:9.5px; font-weight:700; }
+  .rtd-availability-filters { display:flex; align-items:flex-end; gap:8px; flex-wrap:wrap; margin:0 0 9px; padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
+  .rtd-availability-filter-field { display:grid; flex:1 1 165px; gap:4px; min-width:0; }
+  .rtd-availability-filter-label { color:var(--muted); font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+  .rtd-availability-select { width:100%; min-width:0; border-radius:7px; padding-block:6px; background-color:var(--surface); }
+  .rtd-availability-filter-count { align-self:center; color:var(--muted); font-size:9.5px; white-space:nowrap; }
+  .rtd-availability-filter-reset:disabled { cursor:default; opacity:.45; }
+  .rtd-availability-table { max-height:460px; overflow-x:visible; overflow-y:auto; }
+  .rtd-availability-table table { width:100%; border-collapse:collapse; }
+  .rtd-availability-table th, .rtd-availability-table td { padding:7px 8px; font-size:10px; white-space:nowrap; }
+  .rtd-availability-table th { text-align:left; }
+  .rtd-class { display:inline-flex; padding:3px 6px; border-radius:999px; font-size:9px; font-weight:800; }
+  .rtd-open { color:var(--good); background:var(--accent-wash); }
+  .rtd-spare { color:var(--accent); background:var(--accent-wash); }
+  .rtd-repair { color:var(--critical); background:var(--accent-wash); }
+  .rtd-availability-note { margin-top:9px; color:var(--muted); font-size:9.5px; line-height:1.4; }
+  @media (max-width:520px) { .rtd-availability-summary { grid-template-columns:1fr; } .rtd-availability-filter-field { flex-basis:100%; } }
+
+  /* ---------------- Current Unbilled Orders by Terminal ---------------- */
+  .unbilled-summary { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; padding:2px 0 10px; }
+  .unbilled-summary .value { color:var(--warning); font:700 24px/1 ui-monospace,monospace; }
+  .unbilled-summary .label { color:var(--ink-2); font-size:11px; }
+  .unbilled-sort { appearance:none; border:0; padding:0; background:transparent; color:inherit; font:inherit; font-weight:inherit; cursor:pointer; }
+  .unbilled-sort:hover { color:var(--ink); }
+  .unbilled-total td { border-top:2px solid var(--border); background:var(--surface-2); font-weight:700; }
+  .unbilled-not-ready { color:var(--warning); font-weight:700; }
 </style>
 
 <header class="gantry">
@@ -1271,6 +1349,53 @@ function groupBy(rows, key) {
   return m;
 }
 
+const unbilledSortState = {key: "terminal", dir: 1};
+const rtdAvailabilityFilters = {assignedDriver: "", status: "", style: ""};
+function buildRtdAvailabilityFilters(allUnits, visibleCount) {
+  const controls = [
+    {key: "assignedDriver", label: "Assigned Driver", allLabel: "All assigned drivers"},
+    {key: "status", label: "RTD Status", allLabel: "All RTD statuses"},
+    {key: "style", label: "Style", allLabel: "All styles"},
+  ];
+  const toolbar = document.createElement("div");
+  toolbar.className = "rtd-availability-filters";
+  controls.forEach(control => {
+    const field = document.createElement("label");
+    field.className = "rtd-availability-filter-field";
+    const label = document.createElement("span");
+    label.className = "rtd-availability-filter-label";
+    label.textContent = control.label;
+    const select = document.createElement("select");
+    select.className = "pill rtd-availability-select";
+    const allOption = document.createElement("option");
+    allOption.value = ""; allOption.textContent = control.allLabel;
+    select.appendChild(allOption);
+    const values = new Set();
+    allUnits.forEach(u => { const v = String(u[control.key] || "").trim(); if (v) values.add(v); });
+    Array.from(values).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: "base"})).forEach(v => {
+      const option = document.createElement("option");
+      option.value = v; option.textContent = v;
+      if (rtdAvailabilityFilters[control.key].toUpperCase() === v.toUpperCase()) option.selected = true;
+      select.appendChild(option);
+    });
+    select.addEventListener("change", () => { rtdAvailabilityFilters[control.key] = select.value; renderCharts(filtered()); });
+    field.append(label, select);
+    toolbar.appendChild(field);
+  });
+  const count = document.createElement("span");
+  count.className = "rtd-availability-filter-count";
+  count.textContent = `Showing ${fmtNum(visibleCount)} of ${fmtNum(allUnits.length)} units`;
+  toolbar.appendChild(count);
+  const reset = document.createElement("button");
+  reset.type = "button";
+  reset.className = "reset-btn rtd-availability-filter-reset";
+  reset.textContent = "Clear filters";
+  reset.disabled = !Object.values(rtdAvailabilityFilters).some(Boolean);
+  reset.addEventListener("click", () => { Object.keys(rtdAvailabilityFilters).forEach(k => { rtdAvailabilityFilters[k] = ""; }); renderCharts(filtered()); });
+  toolbar.appendChild(reset);
+  return toolbar;
+}
+
 function renderCharts(rows) {
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
@@ -1283,29 +1408,131 @@ function renderCharts(rows) {
   p1.insertBefore(legendRow(OWNERSHIP_ORDER.map(o => ({ color: getComputedColor(OWNERSHIP_COLOR[o]), label: o }))), p1.querySelector("svg"));
   grid.appendChild(p1);
 
-  /* Panel: Available trucks (AVAILABL) by Style, per Terminal -- dispatch
-     status derived from the RTD "Assigned Driver" field ONLY, per standing
-     direction (the RTD sheet's own coarse "Status" column is ignored -- it
-     doesn't reliably agree with Assigned Driver). Per the Tractor Allocation
-     SOP, the driver field must never be blank -- when a tractor has no
-     driver, dispatch puts the status code itself in that field instead.
-     AVAILABL = cleaned, inspected, ready for assignment ("open"). */
-  const STYLE_ORDER = ["Chemical", "PTO", "Van", "Straight Truck", "Unclassified"];
-  const availableRows = rows.filter(t => t.dispatchStatus === "AVAILABL")
-    .sort((a, b) => STYLE_ORDER.indexOf(a.styleKey) - STYLE_ORDER.indexOf(b.styleKey) || (a.terminal || "").localeCompare(b.terminal || ""));
-  const pAvail = panel("Available Trucks", "AVAILABL, by style &amp; terminal", "avail-svg-unused");
+  /* Panel: Fleet Readiness & Downtime Exposure -- summary KPIs + per-terminal
+     capacity balance (AVAILABL + SPARE - down), computed from the same rows. */
+  const readinessDown = rows.filter(t => t.downStatus != null);
+  const readinessDays = readinessDown.map(t => Number(t.downDays) || 0);
+  const readinessNotDown = Math.max(0, rows.length - readinessDown.length);
+  const readinessPct = rows.length ? readinessNotDown / rows.length * 100 : null;
+  const readinessAvgDays = readinessDays.length ? readinessDays.reduce((a, b) => a + b, 0) / readinessDays.length : null;
+  const readinessAged = readinessDown.filter(t => (Number(t.downDays) || 0) >= 7);
+  const readinessMissingEta = readinessDown.filter(t => !t.downEtaCompletion);
+  const readinessLongest = readinessDays.length ? Math.max(...readinessDays) : 0;
+  const pReadiness = panel("Fleet Readiness & Downtime Exposure", "active tractors &middot; current selection", "readiness-svg-unused");
+  pReadiness.querySelector("svg").remove();
+  const readinessKpis = document.createElement("div");
+  readinessKpis.className = "readiness-kpis";
+  readinessKpis.innerHTML = `
+    <div class="readiness-kpi good"><div class="rk-label">Not reported down</div><div class="rk-value">${readinessPct != null ? readinessPct.toFixed(1) + "%" : "—"}</div><div class="rk-sub">${readinessNotDown} of ${rows.length} active tractors</div></div>
+    <div class="readiness-kpi ${readinessDown.length ? "crit" : "good"}"><div class="rk-label">Down now</div><div class="rk-value">${fmtNum(readinessDown.length)}</div><div class="rk-sub">active Down Report records</div></div>
+    <div class="readiness-kpi ${readinessAvgDays >= 14 ? "warn" : ""}"><div class="rk-label">Average down days</div><div class="rk-value">${readinessAvgDays != null ? readinessAvgDays.toFixed(1) : "—"}</div><div class="rk-sub">across currently down tractors</div></div>
+    <div class="readiness-kpi ${readinessMissingEta.length ? "warn" : "good"}"><div class="rk-label">ETA missing</div><div class="rk-value">${fmtNum(readinessMissingEta.length)}</div><div class="rk-sub">of ${readinessDown.length} down tractors</div></div>`;
+  pReadiness.appendChild(readinessKpis);
+  const readinessAlert = document.createElement("div");
+  readinessAlert.className = "readiness-alert";
+  readinessAlert.innerHTML = readinessDown.length
+    ? `<strong>${readinessAged.length}</strong> tractor${readinessAged.length === 1 ? "" : "s"} down 7+ days &middot; longest active downtime <strong>${readinessLongest} days</strong>`
+    : `No active down records in the current selection.`;
+  pReadiness.appendChild(readinessAlert);
+  const readinessTerminals = new Map();
+  rows.forEach(t => {
+    const key = t.terminal || "UNAS";
+    if (!readinessTerminals.has(key)) readinessTerminals.set(key, {terminal: key, active: 0, available: 0, spare: 0, pending: 0, down: 0});
+    const v = readinessTerminals.get(key);
+    v.active += 1;
+    if (t.dispatchStatus === "AVAILABL") v.available += 1;
+    if (t.dispatchStatus === "SPARE") v.spare += 1;
+    if (t.dispatchStatus === "PENDING") v.pending += 1;
+    if (t.downStatus != null) v.down += 1;
+  });
+  const readinessTerminalRows = Array.from(readinessTerminals.values())
+    .map(t => ({...t, ready: t.available + t.spare, balance: t.available + t.spare - t.down}))
+    .filter(t => t.active >= 5 && (t.ready || t.down || t.pending))
+    .sort((a, b) => a.balance - b.balance || a.terminal.localeCompare(b.terminal));
+  const readinessMaxBalance = Math.max(1, ...readinessTerminalRows.map(t => Math.abs(t.balance)));
+  const readinessBalance = document.createElement("div");
+  readinessBalance.className = "readiness-balance";
+  readinessBalance.innerHTML = `<div class="readiness-balance-head"><span>Terminal capacity balance</span><span>AVAILABL + SPARE &minus; down</span></div>` +
+    (readinessTerminalRows.length ? readinessTerminalRows.map(t => {
+      const magnitude = Math.abs(t.balance) / readinessMaxBalance * 50;
+      const left = t.balance < 0 ? 50 - magnitude : 50;
+      const color = t.balance < 0 ? "var(--critical)" : t.balance > 0 ? "var(--good)" : "var(--muted)";
+      const value = t.balance > 0 ? `+${t.balance}` : `${t.balance}`;
+      return `<div class="readiness-row" title="${t.terminal}: ${t.available} available + ${t.spare} spare − ${t.down} down = ${value}"><span class="readiness-term">${t.terminal}</span><span class="readiness-track"><span class="readiness-zero"></span><span class="readiness-fill" style="left:${left}%;width:${Math.max(2, magnitude)}%;background:${color}"></span></span><span class="readiness-value">${value}</span></div>`;
+    }).join("") : `<div class="panel-note">No terminal readiness activity in the current selection.</div>`);
+  pReadiness.appendChild(readinessBalance);
+  grid.appendChild(pReadiness);
+
+  /* Panel: Orientation Inbound -- next scheduled class, real source: Orientation.xlsm */
+  const pOrientation = panel("Orientation Inbound", "next scheduled class &middot; all fleets", "orientation-svg-unused");
+  pOrientation.classList.add("orientation-panel");
+  pOrientation.querySelector("svg").remove();
+  const orientFleets = ORIENTATION_DATA?.fleets || [];
+  const orientTotal = orientFleets.reduce((s, r) => s + (r.count || 0), 0);
+  const orientCompany = orientFleets.reduce((s, r) => s + (r.company || 0), 0);
+  const orientOO = orientFleets.reduce((s, r) => s + (r.ownerOperator || 0), 0);
+  const orientMax = Math.max(1, ...orientFleets.map(r => r.count || 0));
+  const orientHero = document.createElement("div");
+  orientHero.className = "orientation-hero";
+  orientHero.innerHTML = `<div><div class="orientation-date-label">Next orientation</div><div class="orientation-date">${escapeHtml(ORIENTATION_DATA?.classDateLabel || "Not scheduled")}</div><div class="orientation-date-sub">${escapeHtml(ORIENTATION_DATA?.classWeekday || "")} &middot; scheduled class</div></div><div class="orientation-total"><div class="orientation-total-value">${fmtNum(orientTotal)}</div><div class="orientation-total-label">Inbound driver${orientTotal === 1 ? "" : "s"}</div></div>`;
+  pOrientation.appendChild(orientHero);
+  const orientFleetsDiv = document.createElement("div");
+  orientFleetsDiv.className = "orientation-section";
+  orientFleetsDiv.innerHTML = `<div class="orientation-section-head"><span>Inbound by fleet</span><span>Drivers</span></div>` + (orientFleets.length ? orientFleets.map(r => `<div class="orientation-row"><span class="orientation-fleet">${escapeHtml(r.fleet)}</span><span class="orientation-track"><span class="orientation-fill" style="width:${(r.count / orientMax * 100)}%"></span></span><span class="orientation-count">${fmtNum(r.count)}</span></div>`).join("") : `<div class="panel-note">No drivers are listed for the next class.</div>`);
+  pOrientation.appendChild(orientFleetsDiv);
+  const orientMix = document.createElement("div");
+  orientMix.className = "orientation-section";
+  orientMix.innerHTML = `<div class="orientation-section-head"><span>Inbound ownership mix</span><span>${fmtNum(orientTotal)} total</span></div><div class="orientation-mix"><span class="orientation-chip">Company <strong>${fmtNum(orientCompany)}</strong></span><span class="orientation-chip">Owner Operator <strong>${fmtNum(orientOO)}</strong></span></div>`;
+  pOrientation.appendChild(orientMix);
+  const orientFooter = document.createElement("div");
+  orientFooter.className = "orientation-footer";
+  orientFooter.innerHTML = `<span class="orientation-source">Source: ${escapeHtml(ORIENTATION_DATA?.source || "Orientation.xlsm")}</span>`;
+  pOrientation.appendChild(orientFooter);
+  grid.appendChild(pOrientation);
+
+  /* Panel: Available Trucks -- filterable by Assigned Driver, RTD Status, Style.
+     Derived directly from tractor rows (style/assignedDriverRaw/dispatchStatus
+     already come from the same daily RTD pull as dispatch status itself). */
+  const RTD_AVAILABILITY_UNITS = rows
+    .filter(t => t.dispatchStatus === "AVAILABL" || t.dispatchStatus === "SPARE" || t.downStatus != null)
+    .map(t => {
+      const availabilityClass = t.downStatus != null ? "repair" : t.dispatchStatus === "SPARE" ? "spare" : "open";
+      const availabilityLabel = availabilityClass === "repair" ? "Pending Repairs" : availabilityClass === "spare" ? "Spare Units" : "Open / Not Seated";
+      return {assetId: t.assetId, fleetCode: t.terminal, status: t.dispatchStatus, assignedDriver: t.assignedDriverRaw, style: t.style || "Unclassified", availabilityClass, availabilityLabel};
+    })
+    .sort((a, b) => {
+      const order = {open: 0, spare: 1, repair: 2};
+      return (order[a.availabilityClass] ?? 9) - (order[b.availabilityClass] ?? 9) || String(a.fleetCode || "").localeCompare(String(b.fleetCode || "")) || String(a.assetId || "").localeCompare(String(b.assetId || ""), undefined, {numeric: true});
+    });
+  const pAvail = panel("Available Trucks", `RTD classification &middot; ${escapeHtml(DATA.meta.lastRefreshed || "—")}`, "rtd-availability-unused", true);
+  pAvail.classList.add("rtd-availability-panel");
   pAvail.querySelector("svg").remove();
+  const rtdUnits = RTD_AVAILABILITY_UNITS.filter(u =>
+    Object.entries(rtdAvailabilityFilters).every(([key, selected]) => !selected || String(u[key] || "").toUpperCase() === selected.toUpperCase())
+  );
+  const rtdCounts = {open: 0, spare: 0, repair: 0};
+  rtdUnits.forEach(u => { if (rtdCounts[u.availabilityClass] != null) rtdCounts[u.availabilityClass] += 1; });
+  const rtdSummary = document.createElement("div");
+  rtdSummary.className = "rtd-availability-summary";
+  rtdSummary.innerHTML = `<div><strong>${fmtNum(rtdCounts.open)}</strong><span>Open / Not Seated</span></div><div><strong>${fmtNum(rtdCounts.spare)}</strong><span>Spare Units</span></div><div><strong>${fmtNum(rtdCounts.repair)}</strong><span>Pending Repairs</span></div>`;
+  pAvail.appendChild(rtdSummary);
+  pAvail.appendChild(buildRtdAvailabilityFilters(RTD_AVAILABILITY_UNITS, rtdUnits.length));
+  if (rtdUnits.length) {
+    const rtdWrap = document.createElement("div");
+    rtdWrap.className = "table-wrap rtd-availability-table";
+    rtdWrap.innerHTML = `<table><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>RTD Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.status || "—")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
+    pAvail.appendChild(rtdWrap);
+  } else {
+    const empty = document.createElement("div");
+    empty.className = "panel-note";
+    empty.textContent = "No RTD availability rows match the current filters.";
+    pAvail.appendChild(empty);
+  }
+  const rtdNote = document.createElement("div");
+  rtdNote.className = "rtd-availability-note";
+  rtdNote.textContent = "Open = RTD dispatch status AVAILABL. Spare = SPARE. Pending Repairs = active Down Report record. RTD status takes precedence over driver assignment.";
+  pAvail.appendChild(rtdNote);
   grid.appendChild(pAvail);
-  const availTableWrap = document.createElement("div");
-  availTableWrap.id = "avail-table-container";
-  availTableWrap.className = "table-wrap";
-  availTableWrap.innerHTML = availableRows.length
-    ? `<table class="data-table">
-        <thead><tr><th>Style</th><th>Terminal</th><th>Tractor #</th></tr></thead>
-        <tbody>${availableRows.map(t => `<tr><td>${t.styleKey || "&mdash;"}</td><td>${t.terminal || "&mdash;"}</td><td>${t.assetId}</td></tr>`).join("")}</tbody>
-      </table>`
-    : `<div class="panel-note">No available (AVAILABL) tractors in the current selection.</div>`;
-  pAvail.appendChild(availTableWrap);
 
   /* Panel: Pending tractors -- out of service / down for repair, beside
      Available. Sourced from the Down Report's "Down Equipment" tab (Down
@@ -1328,6 +1555,52 @@ function renderCharts(rows) {
       </table>`
     : `<div class="panel-note">No pending tractors in the current selection.</div>`;
   pPending.appendChild(pendingTableWrap);
+
+  /* Panel: Current Unbilled Orders by Terminal -- real per-order McLeod data,
+     see unbilled_orders_data.json / parse_unbilled_orders.py. */
+  const unbilledRows = UNBILLED_ORDER_DATA?.rows || [];
+  const unbilledSorted = [...unbilledRows].sort((a, b) => {
+    const av = a[unbilledSortState.key], bv = b[unbilledSortState.key];
+    if (typeof av === "string") return av.localeCompare(bv) * unbilledSortState.dir;
+    return (av - bv) * unbilledSortState.dir;
+  });
+  const unbilledTotalUnique = unbilledRows.reduce((s, r) => s + (r.uniqueOrders || 0), 0);
+  const unbilledTotalReady = unbilledRows.reduce((s, r) => s + (r.ready || 0), 0);
+  const unbilledTotalNotReady = unbilledRows.reduce((s, r) => s + (r.notReady || 0), 0);
+  const unbilledTotalCharges = unbilledRows.reduce((s, r) => s + (r.totalCharges || 0), 0);
+  const unbilledOldest = unbilledRows.length ? Math.max(...unbilledRows.map(r => r.oldestDays || 0)) : null;
+  const pUnbilled = panel("Current Unbilled Orders by Terminal", UNBILLED_ORDER_DATA?.checkedAt ? "as of " + new Date(UNBILLED_ORDER_DATA.checkedAt).toLocaleString() : "no current report", "unbilled-svg-unused", true);
+  pUnbilled.querySelector("svg").remove();
+  const unbilledSummary = document.createElement("div");
+  unbilledSummary.className = "unbilled-summary";
+  unbilledSummary.innerHTML = `<span class="value">${fmtNum(unbilledTotalUnique)}</span><span class="label">unique order numbers &middot; ${fmtNum(unbilledTotalReady)} ready &middot; ${fmtNum(unbilledTotalNotReady)} not ready &middot; ${fmtUSDFull(unbilledTotalCharges)} unbilled charges${unbilledOldest == null ? "" : " &middot; oldest " + fmtNum(unbilledOldest) + " days"}</span>`;
+  pUnbilled.appendChild(unbilledSummary);
+  const unbilledHeaders = [
+    {key: "terminal", label: "Terminal"}, {key: "uniqueOrders", label: "Unique Orders"},
+    {key: "ready", label: "Ready to Bill"}, {key: "notReady", label: "Not Ready"},
+    {key: "totalCharges", label: "Unbilled Charges"}, {key: "oldestDays", label: "Oldest Days"},
+  ];
+  const unbilledWrap = document.createElement("div");
+  unbilledWrap.className = "table-wrap";
+  const unbilledHeaderHtml = unbilledHeaders.map(h => {
+    const active = unbilledSortState.key === h.key;
+    return `<th class="${active ? "sorted" : ""}"><button type="button" class="unbilled-sort" data-unbilled-sort="${h.key}">${h.label}${active ? (unbilledSortState.dir === 1 ? " ▲" : " ▼") : ""}</button></th>`;
+  }).join("");
+  unbilledWrap.innerHTML = unbilledSorted.length
+    ? `<table class="data-table"><thead><tr>${unbilledHeaderHtml}</tr></thead><tbody>${unbilledSorted.map(r => `<tr><td><strong>${r.terminal}</strong></td><td class="num">${fmtNum(r.uniqueOrders)}</td><td class="num">${fmtNum(r.ready)}</td><td class="num ${r.notReady ? "unbilled-not-ready" : ""}">${fmtNum(r.notReady)}</td><td class="num">${fmtUSDFull(r.totalCharges)}</td><td class="num">${fmtNum(r.oldestDays)}</td></tr>`).join("")}</tbody><tfoot><tr class="unbilled-total"><td>Total</td><td class="num">${fmtNum(unbilledTotalUnique)}</td><td class="num">${fmtNum(unbilledTotalReady)}</td><td class="num">${fmtNum(unbilledTotalNotReady)}</td><td class="num">${fmtUSDFull(unbilledTotalCharges)}</td><td class="num">${unbilledOldest == null ? "—" : fmtNum(unbilledOldest)}</td></tr></tfoot></table>`
+    : `<div class="panel-note">No current unbilled orders report available.</div>`;
+  pUnbilled.appendChild(unbilledWrap);
+  const unbilledNote = document.createElement("div");
+  unbilledNote.className = "panel-note";
+  unbilledNote.textContent = `Source: ${UNBILLED_ORDER_DATA?.source || "McLeod Unbilled Orders Report"}. Every metric is deduplicated by order number. Click any heading to sort.`;
+  pUnbilled.appendChild(unbilledNote);
+  grid.appendChild(pUnbilled);
+  unbilledWrap.querySelectorAll("[data-unbilled-sort]").forEach(btn => btn.addEventListener("click", () => {
+    const key = btn.dataset.unbilledSort;
+    if (unbilledSortState.key === key) unbilledSortState.dir *= -1;
+    else { unbilledSortState.key = key; unbilledSortState.dir = key === "terminal" ? 1 : -1; }
+    renderCharts(rows);
+  }));
 
   const contribData = OWNERSHIP_ORDER
     .map(o => {

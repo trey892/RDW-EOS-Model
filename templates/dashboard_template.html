@@ -276,6 +276,37 @@
   }
   .panel.wide { grid-column: 1 / -1; }
   .panel-toggle { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ---------- PACCAR Lease Turn-In Status ---------- */
+  .paccar-lease-panel { border-top: 3px solid var(--accent); }
+  .paccar-summary { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 7px; }
+  .paccar-summary-item { min-width: 0; padding: 8px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); }
+  .paccar-summary-value { color: var(--ink); font: 800 19px/1 ui-monospace, monospace; }
+  .paccar-summary-value.warn { color: var(--warning); }
+  .paccar-summary-value.crit { color: var(--critical); }
+  .paccar-summary-label { margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .paccar-list { display: flex; flex-direction: column; border-top: 1px solid var(--border); }
+  .paccar-row {
+    display: grid;
+    grid-template-columns: minmax(76px,.58fr) minmax(94px,.72fr) minmax(125px,1.15fr) minmax(110px,.95fr);
+    gap: 8px; align-items: center; padding: 7px 2px; border-bottom: 1px solid var(--border); font-size: 10.5px;
+  }
+  .paccar-row:last-child { border-bottom: 0; }
+  .paccar-vin { color: var(--ink); font-family: ui-monospace, monospace; font-weight: 800; }
+  .paccar-vin small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 650; }
+  .paccar-location { color: var(--ink); font-weight: 750; }
+  .paccar-location small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 650; }
+  .paccar-stage { color: var(--ink-2); }
+  .paccar-due { color: var(--ink); font-weight: 700; text-align: right; }
+  .paccar-due.overdue { color: var(--critical); }
+  .paccar-due.missing { color: var(--warning); }
+  .paccar-source-note { color: var(--muted); font-size: 9.5px; line-height: 1.4; }
+  @media (max-width: 560px) {
+    .paccar-summary { grid-template-columns: 1fr 1fr; }
+    .paccar-row { grid-template-columns: 1fr 1fr auto; }
+    .paccar-stage { grid-column: 1 / -1; grid-row: 2; }
+    .paccar-due { grid-column: 3; grid-row: 1; }
+  }
   .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .panel-title { font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
   .panel-note { font-size: 11px; color: var(--muted); }
@@ -1116,6 +1147,7 @@ const ORIENTATION_DATA = /*__ORIENTATION_DATA__*/;
 const PM_COMPLIANCE_DATA = /*__PM_COMPLIANCE_DATA__*/;
 const UNBILLED_ORDER_DATA = /*__UNBILLED_ORDER_DATA__*/;
 const SOURCE_DATA = /*__SOURCE_DATA__*/;
+const PACCAR_LESSEE_DATA = /*__PACCAR_LESSEE_DATA__*/;
 const REVENUE_MODULE_HTML = /*__REVENUE_MODULE_HTML__*/;
 
 // Static source-document links (fixed URLs, not generated per-request) -- verified
@@ -1680,27 +1712,40 @@ function renderCharts(rows) {
   pAvail.appendChild(rtdNote);
   grid.appendChild(pAvail);
 
-  /* Panel: PACCAR Lease Turn-In Status. Data gap, stated honestly: the manual
-     list of 8 flagged units has no inspection/repair-status data behind it
-     (maturity dates are all null, pending PACCAR's own confirmation per
-     data/raw/paccar_lease_units.json's own note) -- the rich version of this
-     panel (stage, due dates, repair counts) needs a real PACCAR export or
-     portal feed that doesn't exist yet. Shown here is only what's actually
-     known: which units are flagged, and their terminal/style from the RTD
-     pull, rather than fabricating status fields. */
-  const paccarUnits = rows.filter(t => t.isPaccarLease);
-  window.PACCAR_UNITS_LATEST = paccarUnits;
+  /* Panel: PACCAR Lease Turn-In Status. Inspection/repair fields come from a
+     real captured snapshot (LesseeReport CSV, see data/raw/paccar_lessee_snapshot.json
+     and its _note) -- there's no live parser for that source yet, so those fields
+     are frozen at the snapshot's report date. Identity fields (terminal, RTD
+     status, driver, mileage) are overlaid live each build by build_paccar_lessee_data.py. */
+  const paccarUnits = window.PACCAR_UNITS_LATEST = (PACCAR_LESSEE_DATA?.units || []);
   if (paccarUnits.length) {
-    const pPaccar = panel("PACCAR Lease Turn-In Status", "flagged units &middot; inspection/repair status not yet available", "paccar-svg-unused", true);
+    const groundMovement = paccarUnits.filter(u => u.stage === "Grounded" || u.stage.startsWith("Inbound"));
+    const negotiating = paccarUnits.filter(u => u.operationalStatus === "Negotiate Repairs");
+    const pPaccar = panel("PACCAR Lease Turn-In Status", `PACCAR inspection data ${escapeHtml(PACCAR_LESSEE_DATA.reportDate || "—")} &middot; RTD identity ${escapeHtml(PACCAR_LESSEE_DATA.rtdReportDate || "—")}`, "paccar-svg-unused", true);
+    pPaccar.classList.add("paccar-lease-panel");
     pPaccar.querySelector("svg").remove();
+    const paccarSummary = document.createElement("div");
+    paccarSummary.className = "paccar-summary";
+    paccarSummary.innerHTML =
+      `<div class="paccar-summary-item"><div class="paccar-summary-value">${fmtNum(paccarUnits.length)}</div><div class="paccar-summary-label">Units requiring action</div></div>` +
+      `<div class="paccar-summary-item"><div class="paccar-summary-value warn">${fmtNum(groundMovement.length)}</div><div class="paccar-summary-label">Grounded / inbound</div></div>` +
+      `<div class="paccar-summary-item"><div class="paccar-summary-value crit">${fmtNum(negotiating.length)}</div><div class="paccar-summary-label">Repairs negotiating</div></div>`;
+    pPaccar.appendChild(paccarSummary);
+    const paccarList = document.createElement("div");
+    paccarList.className = "paccar-list";
+    paccarList.setAttribute("role", "list");
+    paccarList.innerHTML = paccarUnits.map(u => {
+      const stageDetail = u.days != null ? `${u.stage} &middot; ${u.days} days in status` : u.stage;
+      const title = (u.fullVin || "") + (u.statusDate ? ` &middot; assigned since ${u.statusDate}, 2026` : "");
+      const displayLocation = u.operationalLocation || u.fleetCode || "—";
+      const displayStatus = u.operationalStatus || u.rtdStatus || "—";
+      return `<div class="paccar-row" role="listitem" title="${escapeHtml(title)}" data-paccar-unit="${escapeHtml(u.assetId)}"><span class="paccar-vin">Unit ${escapeHtml(u.assetId)}<small>${escapeHtml(u.vin || "—")}</small></span><span class="paccar-location">${escapeHtml(displayLocation)}<small>${escapeHtml(u.fleetCode || "—")} &middot; ${escapeHtml(displayStatus)}</small></span><span class="paccar-stage">${stageDetail}</span><span class="paccar-due ${escapeHtml(u.dueClass || "")}">${escapeHtml(u.dueLabel || "—")}</span></div>`;
+    }).join("");
+    pPaccar.appendChild(paccarList);
     const paccarNote = document.createElement("div");
-    paccarNote.className = "panel-note";
-    paccarNote.innerHTML = `<strong>Data gap:</strong> maturity dates and inspection/repair status are pending a real PACCAR export or portal feed -- currently just a manually flagged unit list (see data/raw/paccar_lease_units.json).`;
+    paccarNote.className = "paccar-source-note";
+    paccarNote.textContent = `${PACCAR_LESSEE_DATA.inspectionSource || "Lessee report"} supplies inspection and repair status as of ${PACCAR_LESSEE_DATA.reportDate || "an unknown date"}; this dashboard's own RTD pull supplies identity data as of ${PACCAR_LESSEE_DATA.rtdReportDate || "an unknown date"}. Inspection data is a fixed snapshot until a live PACCAR/Lessee feed is connected.`;
     pPaccar.appendChild(paccarNote);
-    const paccarWrap = document.createElement("div");
-    paccarWrap.className = "table-wrap";
-    paccarWrap.innerHTML = `<table class="data-table"><thead><tr><th>Tractor #</th><th>Terminal</th><th>Style</th><th>Maturity Date</th></tr></thead><tbody>${paccarUnits.map(t => `<tr><td class="mono"><strong>${t.assetId}</strong></td><td>${t.terminal || "—"}</td><td>${t.styleKey || "—"}</td><td>${t.paccarMaturityDate || "Pending PACCAR confirmation"}</td></tr>`).join("")}</tbody></table>`;
-    pPaccar.appendChild(paccarWrap);
     grid.appendChild(pPaccar);
   }
 
@@ -3628,7 +3673,7 @@ window.addEventListener("resize", () => {
     const unbilledColumns = [col("terminal","Terminal"),col("uniqueOrders","Unique Orders",number),col("ready","Ready",number),col("notReady","Not Ready",number),col("totalCharges","Charges",money),col("oldestDays","Oldest Days",number)];
     const pendingColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("downDays","Down Days",number),col("downStatus","Status"),col("downLocation","Location"),col("downIssue","Issue"),col("downEtaCompletion","ETA")];
     const orientationColumns = [col("firstName","First"),col("lastName","Last"),col("terminal","Terminal"),col("returningDriver","Returning"),col("ownership","CO/OO")];
-    const paccarColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("styleKey","Style"),col("paccarMaturityDate","Maturity/Status")];
+    const paccarColumns = [col("assetId","Tractor"),col("fleetCode","Terminal"),col("stage","Stage"),col("dueLabel","Due / Action"),col("repairsOutstanding","Repairs Outstanding",number),col("days","Days in Status",number)];
 
     function sectionId(node) { return node.closest("section.view")?.id || "view-fleet"; }
     function baseFor(section) {
@@ -3818,12 +3863,46 @@ window.addEventListener("resize", () => {
       root.querySelectorAll("section.view .ticker .tile").forEach(node => { node.classList.add("rdw-drillable"); node.tabIndex = 0; node.setAttribute("role", "button"); node.setAttribute("aria-label", "View details for " + text(node.querySelector(".label")?.textContent)); });
       root.querySelectorAll("section.view .panel").forEach(node => { node.classList.add("rdw-drillable"); node.tabIndex = 0; node.setAttribute("role", "button"); node.setAttribute("aria-label", "View details for " + text(node.querySelector(".panel-title")?.textContent || "panel")); });
       root.querySelectorAll("section.view .executive-kpi,section.view .executive-alert,section.view .readiness-kpi,section.view .orientation-total,section.view .orientation-row,section.view .orientation-chip").forEach(node => { node.classList.add("rdw-metric-drillable"); node.tabIndex = 0; node.setAttribute("role", "button"); node.setAttribute("aria-label", "View details for " + text(metricLabel(node))); });
+      root.querySelectorAll(".paccar-row[data-paccar-unit]").forEach(node => { node.tabIndex = 0; node.setAttribute("role", "button"); node.setAttribute("aria-label", "View PACCAR detail for Unit " + node.dataset.paccarUnit); });
+    }
+
+    function openPaccarRecord(unit, trigger) {
+      const fields = [
+        ["Tractor", unit.assetId], ["VIN", unit.fullVin || unit.vin], ["Terminal", unit.fleetCode],
+        ["RTD Status", unit.rtdStatus], ["Assigned Driver", unit.assignedDriver], ["Current Hub", unit.currentHub != null ? fmtNum(unit.currentHub) : null],
+        ["Operational Location", unit.operationalLocation], ["Operational Status", unit.operationalStatus],
+        ["Stage", unit.stage], ["Days in Status", unit.days], ["Turned In", unit.turnedInDate],
+        ["Reported Mileage", unit.reportedMileage != null ? fmtNum(unit.reportedMileage) : null],
+        ["Inspection Complete", unit.inspectionComplete], ["Inspection Review Complete", unit.inspectionReviewComplete],
+        ["Repairs Total", unit.repairsTotal], ["Repairs Outstanding", unit.repairsOutstanding], ["Repairs Fixed", unit.repairsFixed],
+        ["Repairs Waived", unit.repairsWaived], ["Repairs Contested", unit.repairsContested],
+      ].filter(([, v]) => v != null && v !== "");
+      const eyebrow2 = document.getElementById("rdw-record-eyebrow");
+      const title2 = document.getElementById("rdw-record-title");
+      const body2 = document.getElementById("rdw-record-body");
+      const source2 = document.getElementById("rdw-record-source");
+      const backdrop2 = document.getElementById("rdw-record-backdrop");
+      if (!backdrop2) return;
+      eyebrow2.textContent = "PACCAR Lease Turn-In";
+      title2.textContent = "Unit " + text(unit.assetId);
+      body2.innerHTML = '<div class="rdw-record-grid">' + fields.map(([l, v]) => '<div class="rdw-record-field"><span class="rdw-record-label">' + esc(l) + '</span><span class="rdw-record-value">' + esc(v) + '</span></div>').join("") + "</div>";
+      source2.textContent = "Sources: " + (PACCAR_LESSEE_DATA.inspectionSource || "Lessee report") + " inspection/repair snapshot " + (PACCAR_LESSEE_DATA.reportDate || "unknown date") + "; this dashboard's own RTD pull, identity as of " + (PACCAR_LESSEE_DATA.rtdReportDate || "unknown date") + ".";
+      backdrop2.classList.add("open");
+      backdrop2.setAttribute("aria-hidden", "false");
+      document.body.classList.add("rdw-drill-open");
+      setTimeout(() => document.getElementById("rdw-record-close")?.focus(), 20);
     }
 
     document.addEventListener("click", e => {
       if (e.target.closest("#rdw-drill-close")) { closeDetail(); return; }
       if (e.target === backdrop) { closeDetail(); return; }
       if (e.target.closest("#rdw-drill-export")) { exportCsv(); return; }
+      const paccarRow = e.target.closest(".paccar-row[data-paccar-unit]");
+      if (paccarRow) {
+        const unit = (PACCAR_LESSEE_DATA?.units || []).find(u => String(u.assetId) === paccarRow.dataset.paccarUnit);
+        if (unit) openPaccarRecord(unit, paccarRow);
+        return;
+      }
       if (e.target.closest("table.data-table")) return; // row clicks handled by the record-modal delegate
       const tile = e.target.closest("section.view .ticker .tile.rdw-drillable");
       if (tile) { openDetail(tileDetail(tile), tile); return; }
@@ -3834,7 +3913,7 @@ window.addEventListener("resize", () => {
     });
     document.addEventListener("keydown", e => {
       if (e.key === "Escape" && drawer.classList.contains("open")) { closeDetail(); return; }
-      if ((e.key === "Enter" || e.key === " ") && e.target.matches(".tile.rdw-drillable,.panel.rdw-drillable,.rdw-metric-drillable")) { e.preventDefault(); e.target.click(); }
+      if ((e.key === "Enter" || e.key === " ") && e.target.matches(".tile.rdw-drillable,.panel.rdw-drillable,.rdw-metric-drillable,.paccar-row[data-paccar-unit]")) { e.preventDefault(); e.target.click(); }
     });
     searchNode.addEventListener("input", render);
 

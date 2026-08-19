@@ -43,6 +43,7 @@ OPTIONAL_PLACEHOLDERS = {
     "/*__PM_COMPLIANCE_DATA__*/": (OUT_DIR / "pm_compliance_data.json", {"dateRange": None, "reportDate": None, "vehicles": []}),
     "/*__UNBILLED_ORDER_DATA__*/": (OUT_DIR / "unbilled_orders_data.json", {"checkedAt": None, "orderCount": 0, "totalCharges": 0, "rows": []}),
     "/*__SOURCE_DATA__*/": (OUT_DIR / "sources_data.json", {"checkedAt": None, "files": []}),
+    "/*__PACCAR_LESSEE_DATA__*/": (OUT_DIR / "paccar_lessee_data.json", {"inspectionSource": None, "reportDate": None, "rtdReportDate": None, "portalUrl": None, "units": []}),
 }
 
 # revenue_module.json is itself a JSON-encoded STRING (an HTML document), not an

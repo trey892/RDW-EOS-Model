@@ -39,6 +39,7 @@ import parse_pm_compliance
 import parse_unbilled_orders
 import derive_lease_fields
 import build_dashboard_data
+import build_paccar_lessee_data
 import build_asset_data
 import build_maintenance_data
 import build_sources_data
@@ -77,6 +78,9 @@ def main():
 
     print("\n--- [4/6] build_dashboard_data ---")
     build_dashboard_data.main()
+
+    print("\n--- build_paccar_lessee_data ---")
+    build_paccar_lessee_data.main()
 
     print("\n--- [5/6] build_asset_data ---")
     build_asset_data.main()

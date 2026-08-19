@@ -889,6 +889,8 @@
             <th data-sort="owner">Owner</th>
             <th data-sort="status">Status</th>
             <th data-sort="insuredValue">Insured Value</th>
+            <th data-sort="pdInsuranceMonthly">Monthly PD Insurance</th>
+            <th data-sort="pdInsuranceStatus">PD Status</th>
             <th data-sort="monthlyLeaseRate">Monthly Lease</th>
             <th data-sort="lessor">Lessor</th>
           </tr>
@@ -2747,9 +2749,20 @@ function renderLeaseCharts(rows) {
   );
 }
 
+// Monthly PD Insurance $ = insuredValue x 0.0817% monthly rate x (1 + 6.175% surplus-lines
+// tax). Applied to every insured row (not just active-leased units) per Trey's direction.
+const PD_MONTHLY_RATE = 0.000817;
+const PD_SURPLUS_LINES_TAX_RATE = 0.06175;
+function pdInsuranceMonthly(row) {
+  const insuredValue = Number(row.insuredValue);
+  return Number.isFinite(insuredValue) && insuredValue > 0 ? insuredValue * PD_MONTHLY_RATE * (1 + PD_SURPLUS_LINES_TAX_RATE) : null;
+}
+function pdInsuranceStatus(row) { return pdInsuranceMonthly(row) == null ? "No PD Match" : "Matched"; }
+
 function renderLeaseTable(rows) {
+  const leaseSortValue = (row, key) => key === "pdInsuranceMonthly" ? pdInsuranceMonthly(row) : key === "pdInsuranceStatus" ? pdInsuranceStatus(row) : row[key];
   const sorted = [...rows].sort((a, b) => {
-    let av = a[leaseState.sortKey], bv = b[leaseState.sortKey];
+    let av = leaseSortValue(a, leaseState.sortKey), bv = leaseSortValue(b, leaseState.sortKey);
     if (av == null) av = leaseState.sortDir === 1 ? Infinity : -Infinity;
     if (bv == null) bv = leaseState.sortDir === 1 ? Infinity : -Infinity;
     if (typeof av === "string") return av.localeCompare(bv) * leaseState.sortDir;
@@ -2767,6 +2780,8 @@ function renderLeaseTable(rows) {
       <td>${u.owner || "—"}</td>
       <td>${u.status || "—"}</td>
       <td class="num">${u.insuredValue != null ? fmtUSDFull(u.insuredValue) : "—"}</td>
+      <td class="num">${pdInsuranceMonthly(u) == null ? "—" : fmtUSDFull(pdInsuranceMonthly(u))}</td>
+      <td><span class="type-chip" style="${pdInsuranceMonthly(u) == null ? "color:var(--warning);border-color:var(--warning);" : "color:var(--good);border-color:var(--good);"}">${pdInsuranceStatus(u)}</span></td>
       <td class="num">${u.monthlyLeaseRate != null ? fmtUSDFull(u.monthlyLeaseRate) : "—"}</td>
       <td>${u.lessor || "—"}</td>
     </tr>

@@ -131,7 +131,7 @@
     background: linear-gradient(155deg, var(--chrome-1) 0%, var(--surface) 38%, var(--chrome-2) 76%, var(--chrome-1) 100%);
     border-bottom: 3px solid var(--accent);
     box-shadow: 0 1px 0 var(--chrome-hi) inset, 0 6px 22px rgba(0,0,0,.22);
-    padding: 20px clamp(16px, 4vw, 40px) 0;
+    padding: 10px clamp(16px, 4vw, 40px) 0;
     position: relative;
     overflow: hidden;
   }
@@ -144,16 +144,16 @@
   }
   .gantry-row {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 16px;
     flex-wrap: wrap;
     position: relative;
-    padding-bottom: 16px;
+    padding-bottom: 8px;
   }
   .gantry h1 {
-    margin: 2px 0 0;
-    font-size: clamp(22px, 3vw, 30px);
+    margin: 1px 0 0;
+    font-size: clamp(17px, 2.1vw, 21px);
     font-weight: 800;
     letter-spacing: -0.01em;
     text-wrap: balance;
@@ -161,7 +161,7 @@
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .gantry .meta {
-    font-size: 12.5px;
+    font-size: 11px;
     color: var(--ink-2);
     max-width: 60ch;
   }
@@ -180,14 +180,14 @@
     background: linear-gradient(90deg, var(--accent-2), var(--accent-mid) 45%, var(--accent-2));
   }
   .status-item {
-    display: flex; align-items: baseline; gap: 7px;
-    padding: 7px clamp(16px, 4vw, 40px) 7px 0;
+    display: flex; align-items: baseline; gap: 6px;
+    padding: 4px clamp(16px, 4vw, 40px) 4px 0;
     margin-left: clamp(16px, 4vw, 40px);
     border-left: 1px solid rgba(255,255,255,.28);
   }
   .status-item:first-child { margin-left: clamp(16px, 4vw, 40px); border-left: none; padding-left: 0; }
-  .status-label { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.9); }
-  .status-value { font: 700 12.5px/1 ui-monospace, monospace; color: #fff; letter-spacing: .01em; }
+  .status-label { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.9); }
+  .status-value { font: 700 11.5px/1 ui-monospace, monospace; color: #fff; letter-spacing: .01em; }
 
   /* ---------- Ticker strip ---------- */
   .ticker {
@@ -419,6 +419,7 @@
   /* ---------- View switch ---------- */
   .view-switch {
     display: inline-flex;
+    flex-wrap: wrap;
     background: linear-gradient(180deg, var(--chrome-2), var(--surface-2));
     border: 1px solid var(--border);
     border-radius: 100px;
@@ -430,7 +431,8 @@
     border: none;
     background: none;
     box-shadow: none;
-    padding: 6px 14px;
+    padding: 4px 11px;
+    font-size: 11.5px;
   }
   .view-switch .pill:hover { border-color: transparent; }
   .view-switch .pill[aria-pressed="true"] {
@@ -515,12 +517,12 @@
 
   /* ---------------- Source Worksheets + feed-health header strip ---------------- */
   .feed-health {
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-    padding:9px clamp(16px,4vw,40px); border-bottom:1px solid var(--border);
-    background:var(--surface-2); color:var(--ink-2); font-size:10.5px;
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    padding:5px clamp(16px,4vw,40px); border-bottom:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-2); font-size:10px;
   }
   .feed-health-label { font-weight:850; letter-spacing:.07em; text-transform:uppercase; color:var(--ink); margin-right:2px; }
-  .feed-health-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border:1px solid var(--border); border-radius:999px; background:var(--surface); }
+  .feed-health-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border:1px solid var(--border); border-radius:999px; background:var(--surface); }
   .feed-health-chip::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--warning); }
   .feed-health-chip.current::before { background:var(--good); }
   .feed-health-chip.changed::before { background:var(--critical); }
@@ -782,7 +784,7 @@
       <h1 id="page-title">Fleet Operations Dashboard</h1>
       <div class="meta" id="page-meta">Live filtering over <span class="mono" id="meta-count">&mdash;</span> active tractors, <span class="mono" id="meta-version">&mdash;</span>. Fuel data covers <span class="mono" id="meta-fuel-period">&mdash;</span>; movements from the <span class="mono" id="meta-mv-period">&mdash;</span>.</div>
     </div>
-    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:5px;">
       <div class="view-switch" id="view-switch" role="tablist" aria-label="Dashboard view">
         <button class="pill" data-view="overview" role="tab">Executive Overview</button>
         <button class="pill" data-view="fleet" role="tab">Fleet Operations</button>

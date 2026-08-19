@@ -19,6 +19,8 @@ import re
 from datetime import date, datetime
 from pathlib import Path
 
+from dashboard_filters import is_excluded_terminal
+
 import openpyxl
 
 SRC = Path(__file__).parent / "data" / "raw" / "Orientation_latest.xlsm"
@@ -68,9 +70,12 @@ def main():
         if not first and not last:
             continue
         ownership_raw = (cell(r, "CO/OO") or "").strip().upper()
+        terminal = str(cell(r, "TERMINAL") or "").strip()
+        if is_excluded_terminal(terminal):
+            continue
         drivers.append({
             "room": str(cell(r, "ROOM") or "").strip(),
-            "terminal": str(cell(r, "TERMINAL") or "").strip(),
+            "terminal": terminal,
             "firstName": first,
             "lastName": last,
             "returningDriver": str(cell(r, "Returning Driver") or "").strip(),

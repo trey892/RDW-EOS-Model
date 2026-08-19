@@ -6,6 +6,8 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
+from dashboard_filters import is_excluded_terminal
+
 SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "maintenance_data.json"
 DOWN_EQUIPMENT_JSON = Path(__file__).parent / "output" / "down_equipment_data.json"
@@ -20,8 +22,21 @@ def sheet_df(wb, name):
 
 def main():
     wb = openpyxl.load_workbook(SRC, data_only=True)
+
+    dim_equipment = sheet_df(wb, "Dim_Equipment")
+    terminal_by_asset = {
+        str(r.AssetID).strip().upper(): r.Terminal
+        for r in dim_equipment.itertuples() if r.AssetType == "TRACTOR" and r.AssetID
+    }
+    excluded_tractor_ids = {
+        str(r.AssetID).strip().upper()
+        for r in dim_equipment.itertuples()
+        if r.AssetType == "TRACTOR" and r.AssetID and is_excluded_terminal(r.Terminal, r.FleetCode)
+    }
+
     wo = sheet_df(wb, "Fact_Maintenance_WO")
     wo = wo[wo["AssetType"] == "TRACTOR"].copy()
+    wo = wo[~wo["AssetID"].astype(str).str.strip().str.upper().isin(excluded_tractor_ids)].copy()
 
     records = []
     for row in wo.itertuples():
@@ -43,6 +58,7 @@ def main():
 
     pm_due = sheet_df(wb, "Fact_PM_Due")
     pm_due_tractors = pm_due[pm_due["AssetKey"].astype(str).str.startswith("TRC-", na=False)].copy()
+    pm_due_tractors = pm_due_tractors[~pm_due_tractors["AssetID"].astype(str).str.strip().str.upper().isin(excluded_tractor_ids)].copy()
     pm_records = []
     for row in pm_due_tractors.itertuples():
         pm_records.append({
@@ -64,12 +80,6 @@ def main():
         })
 
     n_past_due = sum(1 for r in pm_records if r["dueStatus"] == "Past Due")
-
-    dim_equipment = sheet_df(wb, "Dim_Equipment")
-    terminal_by_asset = {
-        str(r.AssetID).strip().upper(): r.Terminal
-        for r in dim_equipment.itertuples() if r.AssetType == "TRACTOR" and r.AssetID
-    }
 
     econ = sheet_df(wb, "Fact_Asset_Economics")
     econ_wide = econ.pivot_table(index="AssetKey", columns="MeasureName", values="Value", aggfunc="first")
@@ -95,7 +105,10 @@ def main():
         down_equipment = json.loads(DOWN_EQUIPMENT_JSON.read_text(encoding="utf-8"))
     down_by_terminal = {}
     for aid, d in down_equipment.items():
-        t = terminal_by_asset.get(str(aid).strip().upper(), "UNKNOWN")
+        aid_norm = str(aid).strip().upper()
+        if aid_norm in excluded_tractor_ids:
+            continue
+        t = terminal_by_asset.get(aid_norm, "UNKNOWN")
         agg = down_by_terminal.setdefault(t, {"terminal": t, "downCount": 0, "totalDownDays": 0})
         agg["downCount"] += 1
         agg["totalDownDays"] += d.get("downDays") or 0
@@ -107,7 +120,10 @@ def main():
         pm_compliance_vehicles = json.loads(PM_COMPLIANCE_JSON.read_text(encoding="utf-8")).get("vehicles", [])
     compliance_by_terminal = {}
     for v in pm_compliance_vehicles:
-        t = terminal_by_asset.get(str(v["vehicle"]).strip().upper())
+        vid = str(v["vehicle"]).strip().upper()
+        if vid in excluded_tractor_ids:
+            continue
+        t = terminal_by_asset.get(vid)
         if not t or v.get("onTimePct") is None:
             continue
         agg = compliance_by_terminal.setdefault(t, {"terminal": t, "vehicleCount": 0, "onTimeSum": 0.0})
@@ -156,6 +172,7 @@ def main():
         "downUnitCount": len(down_equipment),
         "roadCallsAvailable": road_calls_available,
         "pmCodes": pm_codes,
+        "excludedTerminalTractorCount": len(excluded_tractor_ids),
     }
     payload = {
         "meta": meta,
@@ -168,7 +185,7 @@ def main():
         "pmDueComplianceByTerminal": pm_due_compliance_by_terminal,
     }
     OUT.write_text(json.dumps(payload, default=str), encoding="utf-8")
-    print(f"Wrote {len(records)} work orders + {len(pm_records)} PM-due records, {OUT.stat().st_size:,} bytes -> {OUT}")
+    print(f"Wrote {len(records)} work orders + {len(pm_records)} PM-due records, {OUT.stat().st_size:,} bytes -> {OUT} ({len(excluded_tractor_ids)} tractors excluded via dashboard_filters.EXCLUDED_TERMINALS)")
     print(meta)
     print(f"Highest-cost tractors: {len(highest_cost_tractors)}, omitted from CPM: {len(omitted_from_cpm)}")
     print(f"Down units by terminal: {down_units_by_terminal}")

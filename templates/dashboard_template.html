@@ -1217,6 +1217,22 @@ const fmtUSD = (v) => v == null ? "—" : (Math.abs(v) >= 1000 ? "$" + Math.roun
 const fmtUSDFull = (v) => v == null ? "—" : "$" + Math.round(v).toLocaleString();
 const fmtNum = (v, d = 0) => v == null ? "—" : v.toLocaleString(undefined, {maximumFractionDigits: d, minimumFractionDigits: d});
 const fmtPct = (v, d = 1) => v == null ? "—" : v.toFixed(d) + "%";
+// RTD sheet's own raw Status column values, relabeled to their plain-English meaning per Trey (2026-08-19).
+// Display-only -- does not touch dispatchStatus (the SOP-authoritative Assigned Driver field that actually
+// drives Open/Spare/Pending Repairs classification on the Available Trucks panel).
+const SHEET_STATUS_LABEL = { "Open": "Open Truck Yard", "Yard Truck": "Spare Truck", "In Shop": "In Shop Status" };
+const sheetStatusLabel = (v) => v == null || v === "" ? "—" : (SHEET_STATUS_LABEL[String(v).trim()] || String(v));
+// lastRefreshed is a full ISO datetime ("2026-08-19T08:31:05") as of the hourly-refresh
+// version scheme -- older bare-date values ("2026-08-19") still parse fine and just show no time.
+const fmtRefreshTs = (raw) => {
+  if (!raw) return "—";
+  const parsed = new Date(raw.length <= 10 ? raw + "T12:00:00" : raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  const opts = raw.length <= 10
+    ? { month: "short", day: "numeric", year: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" };
+  return parsed.toLocaleString(undefined, opts);
+};
 const mean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : null;
 const sum = (arr) => arr.reduce((a,b)=>a+b,0);
 const clean = (arr, key) => arr.map(d => d[key]).filter(v => v != null);
@@ -1588,7 +1604,7 @@ let assetTerminalBreakdown = "Total";
 const rtdAvailabilityFilters = {sheetStatus: "", status: "", style: ""};
 function buildRtdAvailabilityFilters(allUnits, visibleCount) {
   const controls = [
-    {key: "sheetStatus", label: "Sheet Status", allLabel: "All sheet statuses"},
+    {key: "sheetStatus", label: "Sheet Status", allLabel: "All sheet statuses", valueLabel: sheetStatusLabel},
     {key: "status", label: "RTD Status", allLabel: "All RTD statuses"},
     {key: "style", label: "Style", allLabel: "All styles"},
   ];
@@ -1609,7 +1625,7 @@ function buildRtdAvailabilityFilters(allUnits, visibleCount) {
     allUnits.forEach(u => { const v = String(u[control.key] || "").trim(); if (v) values.add(v); });
     Array.from(values).sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: "base"})).forEach(v => {
       const option = document.createElement("option");
-      option.value = v; option.textContent = v;
+      option.value = v; option.textContent = control.valueLabel ? control.valueLabel(v) : v;
       if (rtdAvailabilityFilters[control.key].toUpperCase() === v.toUpperCase()) option.selected = true;
       select.appendChild(option);
     });
@@ -1739,7 +1755,7 @@ function renderCharts(rows) {
       const order = {open: 0, spare: 1, repair: 2};
       return (order[a.availabilityClass] ?? 9) - (order[b.availabilityClass] ?? 9) || String(a.fleetCode || "").localeCompare(String(b.fleetCode || "")) || String(a.assetId || "").localeCompare(String(b.assetId || ""), undefined, {numeric: true});
     });
-  const pAvail = panel("Available Trucks", `RTD classification &middot; ${escapeHtml(DATA.meta.lastRefreshed || "—")}`, "rtd-availability-unused", true);
+  const pAvail = panel("Available Trucks", `RTD classification &middot; ${escapeHtml(fmtRefreshTs(DATA.meta.lastRefreshed))}`, "rtd-availability-unused", true);
   pAvail.classList.add("rtd-availability-panel");
   pAvail.querySelector("svg").remove();
   const rtdUnits = RTD_AVAILABILITY_UNITS.filter(u =>
@@ -1756,7 +1772,7 @@ function renderCharts(rows) {
   if (rtdUnits.length) {
     const rtdWrap = document.createElement("div");
     rtdWrap.className = "table-wrap rtd-availability-table";
-    rtdWrap.innerHTML = `<table class="data-table"><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>Sheet Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.sheetStatus || "blank")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
+    rtdWrap.innerHTML = `<table class="data-table"><thead><tr><th>Category</th><th>Tractor</th><th>Fleet</th><th>Sheet Status</th><th>Assigned Driver</th><th>Style</th></tr></thead><tbody>${rtdUnits.map(u => `<tr><td><span class="rtd-class rtd-${escapeHtml(u.availabilityClass)}">${escapeHtml(u.availabilityLabel)}</span></td><td class="mono">${escapeHtml(u.assetId)}</td><td>${escapeHtml(u.fleetCode || "—")}</td><td>${escapeHtml(u.sheetStatus ? sheetStatusLabel(u.sheetStatus) : "blank")}</td><td>${escapeHtml(u.assignedDriver || "—")}</td><td>${escapeHtml(u.style)}</td></tr>`).join("")}</tbody></table>`;
     pAvail.appendChild(rtdWrap);
   } else {
     const empty = document.createElement("div");
@@ -3544,7 +3560,7 @@ function setView(view) {
   } else if (view === "fleet") {
     document.getElementById("page-title").textContent = "Fleet Operations Dashboard";
     const versionText = DATA.meta.modelVersion != null
-      ? `v${DATA.meta.modelVersion}, refreshed ${DATA.meta.lastRefreshed || "—"}`
+      ? `v${DATA.meta.modelVersion}, refreshed ${fmtRefreshTs(DATA.meta.lastRefreshed)}`
       : "version unknown";
     document.getElementById("page-meta").innerHTML = `Live filtering over <span class="mono" id="meta-count">${filtered().length} / ${DATA.tractors.length}</span> active tractors, <span class="mono" id="meta-version">${versionText}</span>. Fuel data covers <span class="mono" id="meta-fuel-period">${DATA.meta.fuelPeriod}</span>; movements from the <span class="mono" id="meta-mv-period">${DATA.meta.movementsPeriod}</span>.`;
     document.getElementById("theme-note").textContent = "Revenue confidence varies by unit — see chip on each figure";
@@ -3730,7 +3746,7 @@ window.addEventListener("resize", () => {
     const col = (key, label, format) => ({ key, label, format: format || (v => v == null || v === "" ? "—" : String(v)) });
 
     const fleetColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("division","Division"),col("ownership","Ownership"),col("dispatchStatus","RTD Status"),col("revenue","Revenue",money),col("contribution","Contribution",money),col("deadheadPct","Deadhead",pctFmt),col("annualizedDistance","Annualized Miles",number)];
-    const rtdAvailabilityColumns = [col("assetId","Tractor"),col("fleetCode","Fleet"),col("sheetStatus","Sheet Status"),col("assignedDriver","Assigned Driver"),col("style","Style")];
+    const rtdAvailabilityColumns = [col("assetId","Tractor"),col("fleetCode","Fleet"),col("sheetStatus","Sheet Status",sheetStatusLabel),col("assignedDriver","Assigned Driver"),col("style","Style")];
     const assetColumns = [col("assetId","Asset"),col("assetType","Type",v => ASSET_TYPE_LABEL[v] || v || "—"),col("ownership","Ownership"),col("division","Division"),col("terminal","Terminal"),col("year","Year"),col("netBookValue","Net Book Value",money)];
     const leaseColumns = [col("assetId","Unit"),col("assetType","Type",v => ASSET_TYPE_LABEL[v] || v || "—"),col("year","Year"),col("owner","Owner"),col("insuredValue","Insured Value",money),col("_pd","Monthly PD",(v,row) => { const m = pdInsuranceMonthly(row); return m == null ? "—" : fmtUSDFull(m); }),col("monthlyLeaseRate","Monthly Lease",money),col("lessor","Lessor")];
     const trailerColumns = [col("assetId","Unit"),col("_type","Equipment Type",(v,row) => TRAILER_MASTER_TYPE_LABELS[trailerMasterType(row)] || trailerMasterType(row) || "Unclassified"),col("_fleet","Fleet",(v,row) => trailerMasterFleet(row)),col("_owner","Owner",(v,row) => trailerMasterOwner(row)),col("_status","Status",(v,row) => trailerMasterStatus(row)),col("year","Year"),col("make","Make"),col("insuredValue","Insured Value",money)];
@@ -4000,13 +4016,7 @@ window.addEventListener("resize", () => {
     const refreshEl = document.getElementById("header-refresh");
     const clockEl = document.getElementById("header-clock");
     if (versionEl) versionEl.textContent = DATA?.meta?.modelVersion != null ? "v" + DATA.meta.modelVersion : "—";
-    if (refreshEl) {
-      const raw = DATA?.meta?.lastRefreshed;
-      const parsed = raw ? new Date(raw + "T12:00:00") : null;
-      refreshEl.textContent = parsed && !Number.isNaN(parsed.getTime())
-        ? parsed.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
-        : (raw || "—");
-    }
+    if (refreshEl) refreshEl.textContent = fmtRefreshTs(DATA?.meta?.lastRefreshed);
     if (clockEl) {
       const tick = () => { clockEl.textContent = new Date().toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }); };
       tick();

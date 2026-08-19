@@ -6,6 +6,7 @@ import openpyxl
 import pandas as pd
 
 import model_version
+from dashboard_filters import is_excluded_terminal
 
 SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "dashboard_data.json"
@@ -25,6 +26,9 @@ def main():
 
     dim_equipment = sheet_df(wb, "Dim_Equipment")
     tractors = dim_equipment[dim_equipment["AssetType"] == "TRACTOR"].copy()
+    excluded_mask = tractors.apply(lambda r: is_excluded_terminal(r.get("Terminal"), r.get("FleetCode")), axis=1)
+    excluded_terminal_count = int(excluded_mask.sum())
+    tractors = tractors[~excluded_mask].copy()
 
     econ = sheet_df(wb, "Fact_Asset_Economics")
     econ_wide = econ.pivot_table(index="AssetKey", columns="MeasureName", values="Value", aggfunc="first")
@@ -159,11 +163,12 @@ def main():
         "movementsPeriod": "McLeod export 2026-08-02",
         "qaStatus": qa_status,
         "paccarUnmatchedUnits": unmatched_paccar_ids,
+        "excludedTerminalCount": excluded_terminal_count,
     }
 
     payload = {"meta": meta, "tractors": records}
     OUT.write_text(json.dumps(payload, indent=None, default=str), encoding="utf-8")
-    print(f"Wrote {len(records)} tractors, {OUT.stat().st_size:,} bytes -> {OUT}")
+    print(f"Wrote {len(records)} tractors, {OUT.stat().st_size:,} bytes -> {OUT} ({excluded_terminal_count} excluded via dashboard_filters.EXCLUDED_TERMINALS)")
 
     # sanity prints
     df = pd.DataFrame(records)

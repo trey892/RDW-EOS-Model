@@ -6,6 +6,8 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
+from dashboard_filters import is_excluded_terminal
+
 SRC = Path(__file__).parent / "output" / "RDW_EOS_Master_latest.xlsx"
 OUT = Path(__file__).parent / "output" / "asset_data.json"
 
@@ -35,6 +37,7 @@ def main():
     today_year = 2026  # session "today" per environment context, avoid datetime.now() drift
 
     records = []
+    excluded_count = 0
     for row in dim_equipment.itertuples():
         ak = row.AssetKey
         e = econ_wide.loc[ak] if ak in econ_wide.index else pd.Series(dtype=float)
@@ -50,6 +53,10 @@ def main():
                 age = today_year - yr
             except (ValueError, TypeError):
                 age = None
+
+        if is_excluded_terminal(row.Terminal, row.FleetCode):
+            excluded_count += 1
+            continue
 
         asset_id_norm = str(row.AssetID or "").strip().upper()
         raw_type = str(row.Model or "").strip().upper()
@@ -89,13 +96,14 @@ def main():
         "builtFrom": "RDW_EOS_Master_latest.xlsx",
         "assetCount": len(records),
         "byType": by_type,
+        "excludedTerminalCount": excluded_count,
         "trailerMasterRawCount": len(trailers),
         "trailerMasterOutOfServiceCount": sum(1 for r in trailers if r["trailerMasterStatus"] == "Out of Service"),
         "trailerMasterMissingTypeCount": sum(1 for r in trailers if not r["trailerEquipmentType"]),
     }
     payload = {"meta": meta, "assets": records}
     OUT.write_text(json.dumps(payload, default=str), encoding="utf-8")
-    print(f"Wrote {len(records)} assets, {OUT.stat().st_size:,} bytes -> {OUT}")
+    print(f"Wrote {len(records)} assets, {OUT.stat().st_size:,} bytes -> {OUT} ({excluded_count} excluded via dashboard_filters.EXCLUDED_TERMINALS)")
     print(by_type)
 
 

@@ -3732,12 +3732,41 @@ window.addEventListener("resize", () => {
       document.body.classList.remove("rdw-drill-open");
       if (lastFocus) lastFocus.focus();
     }
-    function exportCsv() {
+    async function exportCsv() {
       const quote = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
       const csv = [detail.columns.map(c => quote(c.label)).join(","), ...detail.visible.map(row => detail.columns.map(c => quote(c.format(row[c.key], row))).join(","))].join("\r\n");
+      const baseName = norm(detail.title).replace(/ /g, "-") + "-detail";
+
+      // Published as a Claude Artifact: frames can't trigger a browser download
+      // directly (no download permission in that sandbox) -- use the downloads
+      // capability, which shows the viewer a save confirmation instead.
+      if (window.claude && typeof window.claude.use === "function") {
+        try {
+          const downloads = await window.claude.use("downloads");
+          if (downloads) {
+            try {
+              await downloads.save({ filename: baseName + ".csv", data: csv });
+              return;
+            } catch (err) {
+              if (err && err.code === "extension_not_enabled") {
+                await downloads.save({ filename: baseName + ".txt", data: csv });
+                return;
+              }
+              if (err && err.code === "declined") return;
+              throw err;
+            }
+          }
+        } catch (err) {
+          exportButton.textContent = "Export unavailable here";
+          setTimeout(() => { exportButton.textContent = "Export CSV"; }, 2500);
+          return;
+        }
+      }
+
+      // Local/dev preview (not running inside the Artifact sandbox): plain download.
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = norm(detail.title).replace(/ /g, "-") + "-detail.csv"; a.click();
+      const a = document.createElement("a"); a.href = url; a.download = baseName + ".csv"; a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 

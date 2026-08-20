@@ -999,6 +999,11 @@
         <tbody id="asset-table-body"></tbody>
       </table>
     </div>
+    <div class="trailer-pagination">
+      <button class="pill" id="asset-page-prev" type="button">Previous</button>
+      <span class="trailer-page-label" id="asset-page-label"></span>
+      <button class="pill" id="asset-page-next" type="button">Next</button>
+    </div>
   </div>
 </section>
 
@@ -2206,7 +2211,7 @@ const ASSET_TYPE_ORDER = ["TRACTOR", "TRAILER", "RBOX"];
 const ASSET_TYPE_LABEL = { TRACTOR: "Tractor", TRAILER: "Trailer", RBOX: "Roll-off Box" };
 const ASSET_TYPE_COLOR = { TRACTOR: "var(--s-company)", TRAILER: "var(--s-lp)", RBOX: "var(--s-oo)" };
 
-const assetState = { assetType: "All", ownership: "All", terminal: "All", search: "", sortKey: "assetId", sortDir: 1 };
+const assetState = { assetType: "All", ownership: "All", terminal: "All", search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
 
 function assetTerminals() {
   const set = new Set(ASSET_DATA.assets.map(a => a.terminal).filter(Boolean));
@@ -2488,8 +2493,10 @@ function renderAssetTable(rows) {
     if (typeof av === "string") return av.localeCompare(bv) * assetState.sortDir;
     return (av - bv) * assetState.sortDir;
   });
-  const LIMIT = 200;
-  const shown = sorted.slice(0, LIMIT);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / assetState.pageSize));
+  assetState.page = Math.min(assetState.page, totalPages);
+  const start = (assetState.page - 1) * assetState.pageSize;
+  const shown = sorted.slice(start, start + assetState.pageSize);
   const tbody = document.getElementById("asset-table-body");
   tbody.innerHTML = shown.map(a => `
     <tr>
@@ -2504,8 +2511,10 @@ function renderAssetTable(rows) {
       <td class="num">${a.netBookValue != null ? fmtUSDFull(a.netBookValue) : "—"}</td>
     </tr>
   `).join("");
-  document.getElementById("asset-table-note").textContent =
-    rows.length > LIMIT ? `showing ${LIMIT} of ${rows.length} matching assets — narrow with filters or search` : `${rows.length} matching assets`;
+  document.getElementById("asset-table-note").textContent = `${fmtNum(rows.length)} matching assets`;
+  document.getElementById("asset-page-label").textContent = `Page ${assetState.page} of ${totalPages}`;
+  document.getElementById("asset-page-prev").disabled = assetState.page <= 1;
+  document.getElementById("asset-page-next").disabled = assetState.page >= totalPages;
 }
 
 function renderAssetFilters() {
@@ -2521,7 +2530,7 @@ function renderAssetFilters() {
       btn.textContent = labels ? (labels[opt] || opt) : opt;
       btn.dataset.value = opt;
       btn.setAttribute("aria-pressed", assetState[key] === opt ? "true" : "false");
-      btn.addEventListener("click", () => { assetState[key] = opt; updateAssets(); });
+      btn.addEventListener("click", () => { assetState[key] = opt; assetState.page = 1; updateAssets(); });
       wrap.appendChild(btn);
     });
   }
@@ -2535,19 +2544,23 @@ function renderAssetFilters() {
     if (t === assetState.terminal) opt.selected = true;
     termSelect.appendChild(opt);
   });
-  termSelect.onchange = () => { assetState.terminal = termSelect.value; updateAssets(); };
+  termSelect.onchange = () => { assetState.terminal = termSelect.value; assetState.page = 1; updateAssets(); };
 
-  document.getElementById("asset-search").oninput = (e) => { assetState.search = e.target.value; updateAssets(); };
+  document.getElementById("asset-search").oninput = (e) => { assetState.search = e.target.value; assetState.page = 1; updateAssets(); };
   document.getElementById("reset-asset-filters").onclick = () => {
-    assetState.assetType = "All"; assetState.ownership = "All"; assetState.terminal = "All"; assetState.search = "";
+    assetState.assetType = "All"; assetState.ownership = "All"; assetState.terminal = "All"; assetState.search = ""; assetState.page = 1;
     document.getElementById("asset-search").value = "";
     updateAssets();
   };
+
+  document.getElementById("asset-page-prev").addEventListener("click", () => { assetState.page = Math.max(1, assetState.page - 1); renderAssetTable(filteredAssets()); });
+  document.getElementById("asset-page-next").addEventListener("click", () => { assetState.page += 1; renderAssetTable(filteredAssets()); });
 
   document.querySelectorAll("#asset-table th[data-sort]").forEach(th => {
     th.addEventListener("click", () => {
       const key = th.dataset.sort;
       if (assetState.sortKey === key) { assetState.sortDir *= -1; } else { assetState.sortKey = key; assetState.sortDir = 1; }
+      assetState.page = 1;
       document.querySelectorAll("#asset-table th").forEach(h => h.classList.remove("sorted"));
       th.classList.add("sorted");
       renderAssetTable(filteredAssets());

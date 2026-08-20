@@ -1203,8 +1203,7 @@
 </section>
 
 <section class="view" id="view-revenue" style="display:none">
-  <div class="panel-note" style="margin:12px clamp(16px,4vw,40px) 0;">Static historical snapshot &mdash; not yet wired to a live refresh. This module's revenue data is a frozen point-in-time export, separate from the rest of this dashboard's pipeline.</div>
-  <iframe id="revenue-frame" title="RDW Revenue" style="width:100%; height:80vh; border:0; display:block;"></iframe>
+  <div class="grid" id="revenue-grid"></div>
 </section>
 
 <section class="view" id="view-sources" style="display:none">
@@ -1242,7 +1241,8 @@ const UNBILLED_ORDER_DATA = /*__UNBILLED_ORDER_DATA__*/;
 const SERVICE_INCIDENTS_DATA = /*__SERVICE_INCIDENTS_DATA__*/;
 const SOURCE_DATA = /*__SOURCE_DATA__*/;
 const PACCAR_LESSEE_DATA = /*__PACCAR_LESSEE_DATA__*/;
-const REVENUE_MODULE_HTML = /*__REVENUE_MODULE_HTML__*/;
+const REVENUE_ANALYSIS_DATA = /*__REVENUE_ANALYSIS_DATA__*/;
+const REVENUE_NARRATIVE_DATA = /*__REVENUE_NARRATIVE_DATA__*/;
 
 // Static source-document links (fixed URLs, not generated per-request) -- verified
 // directly against the prior fleet-site dashboard's own source, not guessed.
@@ -3330,6 +3330,113 @@ function sourceCard(file) {
   </article>`;
 }
 
+function renderRevenue() {
+  const grid = document.getElementById("revenue-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  const data = REVENUE_ANALYSIS_DATA;
+  const narrative = REVENUE_NARRATIVE_DATA;
+  if (!data || !data.totals) {
+    grid.innerHTML = `<div class="panel wide"><div class="panel-note">No revenue analysis data loaded yet -- run parse_revenue_goal.py / build_revenue_analysis.py.</div></div>`;
+    return;
+  }
+  const money = v => v == null ? "—" : (v < 0 ? "-$" : "$") + Math.abs(Number(v)).toLocaleString(undefined, {maximumFractionDigits: 0});
+  const moneyFull = v => v == null ? "—" : (v < 0 ? "-$" : "$") + Math.abs(Number(v)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const pct = v => v == null ? "—" : Number(v).toFixed(1) + "%";
+
+  /* Panel: Goal Performance -- this week's aggregate KPIs */
+  const pGoal = panel("Goal Performance", `week of ${escapeHtml(data.periodStart || "?")} &ndash; ${escapeHtml(data.periodEnd || "?")} &middot; ${fmtNum(data.totals.tractorCount)} tractors`, "goal-svg-unused");
+  pGoal.querySelector("svg").remove();
+  const goalKpis = document.createElement("div");
+  goalKpis.className = "readiness-kpis";
+  const pctVal = data.totals.revenuePct;
+  goalKpis.innerHTML = `
+    <div class="readiness-kpi ${pctVal != null && pctVal < 100 ? "warn" : "good"}"><div class="rk-label">Revenue actual</div><div class="rk-value">${money(data.totals.revenueActual)}</div><div class="rk-sub">vs ${money(data.totals.revenueGoal)} goal</div></div>
+    <div class="readiness-kpi ${pctVal != null && pctVal < 100 ? "warn" : "good"}"><div class="rk-label">Goal attainment</div><div class="rk-value">${pct(pctVal)}</div><div class="rk-sub">${data.totals.revenueDiff >= 0 ? "+" : ""}${money(data.totals.revenueDiff)} vs goal</div></div>
+    <div class="readiness-kpi"><div class="rk-label">Distance actual</div><div class="rk-value">${fmtNum(data.totals.distanceActual)}</div><div class="rk-sub">miles, this week</div></div>
+    <div class="readiness-kpi ${data.idleIron.count ? "warn" : "good"}"><div class="rk-label">Idle iron</div><div class="rk-value">${fmtNum(data.idleIron.count)}</div><div class="rk-sub">${fmtNum(data.idleIron.ghostCount)} confirmed ghost (OOS in RTD)</div></div>`;
+  pGoal.appendChild(goalKpis);
+  grid.appendChild(pGoal);
+
+  /* Panel: Revenue per Day -- distribution by ownership */
+  const pOwn = panel("Revenue per Day by Ownership", "quartiles across this week's tractors", "rpd-svg-unused");
+  pOwn.querySelector("svg").remove();
+  const ownWrap = document.createElement("div");
+  ownWrap.className = "table-wrap";
+  ownWrap.innerHTML = `<table class="data-table"><thead><tr><th>Ownership</th><th>Tractors</th><th>Q1 $/day</th><th>Median $/day</th><th>Q3 $/day</th><th>Revenue</th><th>Goal %</th></tr></thead><tbody>` +
+    (data.byOwnership || []).map(o => `<tr><td>${escapeHtml(o.ownership)}</td><td class="num">${fmtNum(o.count)}</td><td class="num">${money(o.revenuePerDay?.q1)}</td><td class="num">${money(o.revenuePerDay?.median)}</td><td class="num">${money(o.revenuePerDay?.q3)}</td><td class="num">${money(o.revenueActual)}</td><td class="num">${pct(o.revenuePct)}</td></tr>`).join("") +
+    `</tbody></table>`;
+  pOwn.appendChild(ownWrap);
+  grid.appendChild(pOwn);
+
+  /* Panel: Terminal Economics */
+  const pTerm = panel("Terminal Economics", "revenue per day and per mile, by terminal", "term-econ-svg-unused");
+  pTerm.querySelector("svg").remove();
+  const termWrap = document.createElement("div");
+  termWrap.className = "table-wrap";
+  termWrap.innerHTML = `<table class="data-table"><thead><tr><th>Terminal</th><th>Tractors</th><th>Revenue</th><th>Goal %</th><th>Median $/day</th><th>Median $/mi</th></tr></thead><tbody>` +
+    (data.byTerminal || []).map(t => `<tr><td>${escapeHtml(t.terminal)}</td><td class="num">${fmtNum(t.count)}</td><td class="num">${money(t.revenueActual)}</td><td class="num">${pct(t.revenuePct)}</td><td class="num">${money(t.medianRevenuePerDay)}</td><td class="num">${t.medianRevenuePerMile == null ? "—" : moneyFull(t.medianRevenuePerMile)}</td></tr>`).join("") +
+    `</tbody></table>`;
+  pTerm.appendChild(termWrap);
+  grid.appendChild(pTerm);
+
+  /* Panel: Idle Iron -- $0 revenue this week, near-full days */
+  const pIdle = panel("Idle Iron", `$0 revenue, ${data.idleIron.thresholdDays}+ days this week &middot; Ghost = confirmed Out Of Service in RTD, not just quiet`, "idle-svg-unused");
+  pIdle.querySelector("svg").remove();
+  const idleWrap = document.createElement("div");
+  idleWrap.className = "table-wrap";
+  const idleUnits = data.idleIron.units || [];
+  idleWrap.innerHTML = idleUnits.length ? `<table class="data-table"><thead><tr><th>Tractor</th><th>Driver</th><th>Terminal</th><th>Ownership</th><th>Days</th><th>Revenue Goal</th><th>Status</th></tr></thead><tbody>` +
+    idleUnits.map(u => `<tr><td>${escapeHtml(u.tractor)}</td><td>${escapeHtml(u.driver || "—")}</td><td>${escapeHtml(u.terminal || "—")}</td><td>${escapeHtml(u.ownership)}</td><td class="num">${fmtNum(u.days)}</td><td class="num">${money(u.revenueGoal)}</td><td>${u.isGhost ? `<span style="color:var(--critical);font-weight:800;">GHOST &middot; OOS ${escapeHtml(u.outOfServiceDate || "")}</span>` : "Quiet this week"}</td></tr>`).join("") + `</tbody></table>` : `<div class="panel-note">No idle tractors this week.</div>`;
+  pIdle.appendChild(idleWrap);
+  grid.appendChild(pIdle);
+
+  /* Panel: Data Integrity -- recomputed every run, not carried-over claims */
+  const pInteg = panel("Data Integrity", "recomputed from this week's data, not a fixed claim", "integ-svg-unused");
+  pInteg.querySelector("svg").remove();
+  const di = data.dataIntegrity || {};
+  const integFlags = document.createElement("div");
+  integFlags.style.cssText = "display:flex;flex-direction:column;gap:8px;";
+  const flagRow = (severity, html) => `<div class="svcinc-gap" style="${severity === "warn" ? "border-color:var(--warning);" : ""}">${html}</div>`;
+  let flagsHtml = "";
+  if (di.unsuffixedUnits && di.unsuffixedUnits.count) {
+    const spread = di.unsuffixedUnits.medianRevenuePerDay != null && di.suffixedCompanyUnits?.medianRevenuePerDay != null
+      ? di.unsuffixedUnits.medianRevenuePerDay - di.suffixedCompanyUnits.medianRevenuePerDay : null;
+    flagsHtml += flagRow("warn", `<strong>${fmtNum(di.unsuffixedUnits.count)}</strong> unsuffixed unit numbers (no O/L/C/P suffix) &middot; median ${money(di.unsuffixedUnits.medianRevenuePerDay)}/day vs ${money(di.suffixedCompanyUnits?.medianRevenuePerDay)}/day for suffixed Company units${spread != null ? ` (${spread >= 0 ? "+" : ""}${money(spread)}/day spread)` : ""}`);
+  }
+  if (di.duplicateSerialNumbers && di.duplicateSerialNumbers.length) {
+    flagsHtml += flagRow("warn", `<strong>${di.duplicateSerialNumbers.length}</strong> duplicate serial number(s) in the RTD tractor listing: ${di.duplicateSerialNumbers.map(d => escapeHtml(d.serialNumber) + " (" + d.count + "x)").join(", ")}`);
+  } else {
+    flagsHtml += flagRow("", `No duplicate serial numbers found in the current RTD tractor listing.`);
+  }
+  if (di.ownershipClassification) {
+    flagsHtml += flagRow("", `Ownership classified from RTD's own Owner field for <strong>${fmtNum(di.ownershipClassification.rtdConfirmed)}</strong> tractors; <strong>${fmtNum(di.ownershipClassification.suffixFallback)}</strong> fell back to the unit-number-suffix guess (not found in current RTD snapshot).`);
+  }
+  integFlags.innerHTML = flagsHtml || `<div class="panel-note">No integrity flags this run.</div>`;
+  pInteg.appendChild(integFlags);
+  grid.appendChild(pInteg);
+
+  /* Panel: This Week's Analysis -- narrative, regenerated weekly by whatever runs the scheduled
+     refresh (see SKILL.md), reading this same computed data. Not code-generated text. */
+  const pNarr = panel("This Week's Analysis", narrative?.writtenAt ? `written ${escapeHtml(new Date(narrative.writtenAt).toLocaleString())} &middot; regenerated weekly` : "not yet written", "narr-svg-unused", true);
+  pNarr.querySelector("svg").remove();
+  const narrBody = document.createElement("div");
+  narrBody.style.cssText = "font-size:12.5px;line-height:1.65;color:var(--ink-2);";
+  if (narrative?.html) {
+    narrBody.innerHTML = narrative.html;
+  } else {
+    narrBody.innerHTML = `<div class="panel-note">No narrative written yet for this period. The scheduled weekly refresh writes fresh commentary here after each new Revenue Goal export lands.</div>`;
+  }
+  pNarr.appendChild(narrBody);
+  const droppedNote = document.createElement("div");
+  droppedNote.className = "panel-note";
+  droppedNote.style.marginTop = "10px";
+  const dropped = data.droppedSections || {};
+  droppedNote.innerHTML = Object.values(dropped).map(escapeHtml).join(" &middot; ");
+  if (Object.keys(dropped).length) pNarr.appendChild(droppedNote);
+  grid.appendChild(pNarr);
+}
+
 function renderStaticSources() {
   const files = Array.isArray(SOURCE_DATA?.files) ? SOURCE_DATA.files : [];
   const checkedAt = SOURCE_DATA?.checkedAt;
@@ -3664,10 +3771,9 @@ function setView(view) {
     renderLeaseCharts(filteredLease());
   } else if (view === "revenue") {
     document.getElementById("page-title").textContent = "RDW Revenue";
-    document.getElementById("page-meta").innerHTML = "Standalone revenue analytics module &mdash; static snapshot, filterable within the module itself.";
-    document.getElementById("theme-note").textContent = "Not yet wired to a live pipeline refresh";
-    const frame = document.getElementById("revenue-frame");
-    if (frame && !frame.dataset.loaded) { frame.srcdoc = REVENUE_MODULE_HTML; frame.dataset.loaded = "true"; }
+    document.getElementById("page-meta").innerHTML = REVENUE_ANALYSIS_DATA?.periodStart ? `Week of <span class="mono">${REVENUE_ANALYSIS_DATA.periodStart}</span> &ndash; <span class="mono">${REVENUE_ANALYSIS_DATA.periodEnd}</span>, from McLeod's weekly Revenue Goal by Tractor export.` : "No revenue data loaded yet.";
+    document.getElementById("theme-note").textContent = "Live weekly refresh -- computed metrics + narrative regenerated each week, not a static snapshot";
+    renderRevenue();
   } else if (view === "sources") {
     document.getElementById("page-title").textContent = "Source Worksheets";
     document.getElementById("page-meta").innerHTML = SOURCE_DATA?.checkedAt ? `Source snapshot as of <span class="mono">${new Date(SOURCE_DATA.checkedAt).toLocaleString()}</span>.` : "Source snapshot.";

@@ -4,7 +4,7 @@ dashboard_template.html in place of its placeholder markers. Run after
 build_dashboard_data.py / build_asset_data.py / build_maintenance_data.py
 (and extract_lease_data.py, if lease_data.json needs refreshing).
 
-The "optional source" datasets (orientation/pm_compliance/unbilled_orders/service_incidents)
+The "optional source" datasets (orientation/pm_compliance/unbilled_orders/service_incidents/revenue_analysis)
 fall back to an empty-shaped default if their JSON doesn't exist yet (e.g. very
 first run, or that day's Drive pull found nothing) -- the dashboard should
 render fine with those panels showing "no data" rather than the whole assemble
@@ -45,14 +45,9 @@ OPTIONAL_PLACEHOLDERS = {
     "/*__SERVICE_INCIDENTS_DATA__*/": (OUT_DIR / "service_incidents_data.json", {"checkedAt": None, "dateRangeLabel": None, "reportTotalIncidents": None, "parsedIncidents": 0, "unparsedIncidents": 0, "unmappedIncidents": 0, "rows": []}),
     "/*__SOURCE_DATA__*/": (OUT_DIR / "sources_data.json", {"checkedAt": None, "files": []}),
     "/*__PACCAR_LESSEE_DATA__*/": (OUT_DIR / "paccar_lessee_data.json", {"inspectionSource": None, "reportDate": None, "rtdReportDate": None, "portalUrl": None, "units": []}),
+    "/*__REVENUE_ANALYSIS_DATA__*/": (OUT_DIR / "revenue_analysis_data.json", {"checkedAt": None, "periodStart": None, "periodEnd": None, "totals": None, "byOwnership": [], "byTerminal": [], "idleIron": {"thresholdDays": 5, "count": 0, "ghostCount": 0, "units": []}, "dataIntegrity": {}, "droppedSections": {}}),
+    "/*__REVENUE_NARRATIVE_DATA__*/": (OUT_DIR / "revenue_narrative.json", {"writtenAt": None, "html": None}),
 }
-
-# revenue_module.json is itself a JSON-encoded STRING (an HTML document), not an
-# object, so it doesn't fit REQUIRED/OPTIONAL_PLACEHOLDERS' dict-default shape --
-# handled separately below with a string default instead.
-REVENUE_MODULE_MARKER = "/*__REVENUE_MODULE_HTML__*/"
-REVENUE_MODULE_JSON = OUT_DIR / "revenue_module.json"
-REVENUE_MODULE_DEFAULT = "<p style=\"padding:24px;font:14px system-ui\">Revenue module unavailable this build.</p>"
 
 
 def main():
@@ -72,11 +67,6 @@ def main():
             raise ValueError(f"Marker {marker} not found in {TEMPLATE}")
         payload = data_file.read_text(encoding="utf-8") if data_file.exists() else json.dumps(default)
         html = html.replace(marker, payload, 1)
-
-    if REVENUE_MODULE_MARKER not in html:
-        raise ValueError(f"Marker {REVENUE_MODULE_MARKER} not found in {TEMPLATE}")
-    revenue_payload = REVENUE_MODULE_JSON.read_text(encoding="utf-8") if REVENUE_MODULE_JSON.exists() else json.dumps(REVENUE_MODULE_DEFAULT)
-    html = html.replace(REVENUE_MODULE_MARKER, revenue_payload, 1)
 
     OUT.write_text(html, encoding="utf-8")
     print(f"Wrote {OUT} ({OUT.stat().st_size:,} bytes)")

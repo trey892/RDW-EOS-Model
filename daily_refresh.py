@@ -14,6 +14,14 @@ Runs the full daily refresh pipeline in order. Expects, before this runs:
                                              pre-extracted via Drive's read_file_content --
                                              requires data/raw's tractor_status already
                                              parsed this run, see parse_service_incidents.py)
+      data/raw/Revenue_Goal_latest.xlsx    (RDW Revenue tab -- weekly McLeod "Revenue Goal by
+                                             Tractor" export, downloaded as a real .xlsx, not
+                                             text-extracted like the two above; also requires
+                                             tractor_status already parsed this run, see
+                                             parse_revenue_goal.py. Only actually updates once a
+                                             week -- most runs carry forward last week's parsed
+                                             output/revenue_goal_data.json unchanged, which is
+                                             expected, not an error.)
 
 Produces, in order:
   1. output/pm_due_data.json          (parse_pm_due)
@@ -42,13 +50,14 @@ import parse_orientation
 import parse_pm_compliance
 import parse_unbilled_orders
 import parse_service_incidents
+import parse_revenue_goal
+import build_revenue_analysis
 import derive_lease_fields
 import build_dashboard_data
 import build_paccar_lessee_data
 import build_asset_data
 import build_maintenance_data
 import build_sources_data
-import build_revenue_module
 import assemble_dashboard
 
 
@@ -78,6 +87,8 @@ def main():
     _run_optional("[3c/6] parse_pm_compliance", parse_pm_compliance)
     _run_optional("[3d/6] parse_unbilled_orders", parse_unbilled_orders)
     _run_optional("[3e/6] parse_service_incidents", parse_service_incidents)
+    _run_optional("[3f/6] parse_revenue_goal", parse_revenue_goal)
+    _run_optional("[3g/6] build_revenue_analysis", build_revenue_analysis)
 
     print("\n--- derive_lease_fields ---")
     derive_lease_fields.main()
@@ -96,13 +107,6 @@ def main():
 
     print("\n--- build_sources_data ---")
     build_sources_data.main()
-
-    if build_revenue_module.REVENUE_SRC.exists():
-        print("\n--- build_revenue_module ---")
-        build_revenue_module.main()
-    else:
-        print(f"\n--- build_revenue_module skipped (no {build_revenue_module.REVENUE_SRC} -- "
-              "keeping prior output, or 'unavailable' placeholder if none exists yet) ---")
 
     print("\n--- assemble_dashboard ---")
     assemble_dashboard.main()

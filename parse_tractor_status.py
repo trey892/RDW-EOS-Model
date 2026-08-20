@@ -27,6 +27,13 @@ Truck" / "In Shop"), captured alongside dispatchStatus per Trey's 2026-08
 request to show both side by side on the dashboard -- it is NOT used to
 derive dispatchStatus or any other computed field, since it's the same
 column called out above as unreliable against Assigned Driver.
+
+`owner`, `outOfServiceDate`, and `serialNumber` (added 2026-08-19 for
+parse_revenue_goal.py) are RTD's own Owner/Out Of Service Date/Serial Number
+columns, used there to classify ownership (Company vs Owner-Operator vs
+Lease-Purchase) and flag "ghost" tractors -- more reliable than guessing
+ownership from the unit-number suffix, which is what the revenue tab did
+before.
 """
 import json
 from pathlib import Path
@@ -73,6 +80,9 @@ def main():
             "fleet": r[idx["Fleet"]],
             "style": (r[idx["Type"]] or "").strip(),
             "currentHub": r[idx["Current Hub"]],
+            "owner": r[idx["Owner"]],
+            "outOfServiceDate": r[idx["Out Of Service Date"]],
+            "serialNumber": (r[idx["Serial Number"]] or "").strip() if r[idx["Serial Number"]] else None,
         }
 
     from collections import Counter

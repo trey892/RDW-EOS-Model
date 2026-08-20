@@ -1274,7 +1274,7 @@ const REVENUE_NARRATIVE_DATA = /*__REVENUE_NARRATIVE_DATA__*/;
 
 // Static source-document links (fixed URLs, not generated per-request) -- verified
 // directly against the prior fleet-site dashboard's own source, not guessed.
-const DOWN_REPORT_SOURCE_URL = "https://robbiedwood-my.sharepoint.com/:x:/g/personal/trey_robbiedwood_onmicrosoft_com/IQAVsWer94RiRqDZsTxL2jgrAZSE_q2xnHxQ7lzbEtT5TA4?e=vgVrNB";
+const DOWN_REPORT_SOURCE_URL = "https://robbiedwood-my.sharepoint.com/:x:/g/personal/trey_robbiedwood_onmicrosoft_com/IQAVsWer94RiRqDZsTxL2jgrAZSE_q2xnHxQ7lzbEtT5TA4?e=PdOQgd";
 // Trey asked (2026-08-20) for this to go straight to the real SharePoint source
 // workbook, not the synced Drive copy/folder -- pinned directly, no SOURCE_DATA lookup.
 const ORIENTATION_SOURCE_URL = "https://robbiedwood-my.sharepoint.com/:x:/g/personal/trey_robbiedwood_onmicrosoft_com/IQAnY5Z8tiUVSbZwa4B0RrMsAfYbbA4TPhcTU_oYgicR6Dk?e=Mgh3R2";
@@ -1736,7 +1736,7 @@ function renderCharts(rows) {
   const readinessAged = readinessDown.filter(t => (Number(t.downDays) || 0) >= 7);
   const readinessMissingEta = readinessDown.filter(t => !t.downEtaCompletion);
   const readinessLongest = readinessDays.length ? Math.max(...readinessDays) : 0;
-  const pReadiness = panel("Fleet Readiness & Downtime Exposure", "active tractors &middot; current selection", "readiness-svg-unused");
+  const pReadiness = panel("Fleet Readiness & Downtime Exposure", `active tractors &middot; current selection &middot; <a class="source-open" href="${DOWN_REPORT_SOURCE_URL}" target="_blank" rel="noopener noreferrer">Open Down Report &#8599;</a>`, "readiness-svg-unused");
   pReadiness.querySelector("svg").remove();
   const readinessKpis = document.createElement("div");
   readinessKpis.className = "readiness-kpis";

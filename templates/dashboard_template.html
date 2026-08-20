@@ -1147,6 +1147,7 @@
     <div class="filter-group"><span class="fg-label">Fleet</span><select class="pill" id="filter-trailerfleet"></select></div>
     <div class="filter-group"><span class="fg-label">Owner</span><select class="pill" id="filter-trailerowner"></select></div>
     <div class="filter-group"><span class="fg-label">Status</span><div id="filter-trailerstatus"></div></div>
+    <div class="filter-group"><span class="fg-label">&nbsp;</span><button type="button" class="pill" id="filter-exclude-rbox" aria-pressed="false">Exclude Roll-Off Box</button></div>
     <div class="filter-group" style="flex:1; min-width:200px;">
       <input type="search" class="pill" id="trailer-master-search" placeholder="Search trailer #, make, fleet, owner&hellip;" style="width:100%; max-width:300px; border-radius:8px; cursor:text;">
     </div>
@@ -3471,7 +3472,7 @@ const TRAILER_MASTER_TYPE_LABELS = {
 };
 const TRAILER_MASTER_TOWABLE_TYPES = new Set(["BT", "VAN", "F/B", "DUMP", "R/O", "VAC"]);
 const trailerMasterRows = (LEASE_DATA?.units || []).filter(row => row.assetType === "TRAILER");
-const trailerMasterState = { type: "All", division: "All", fleet: "All", owner: "All", status: "All", search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
+const trailerMasterState = { type: "All", division: "All", fleet: "All", owner: "All", status: "All", excludeRbox: false, search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
 
 function trailerMasterType(row) {
   const value = String(row.trailerEquipmentType || row.model || "").trim().toUpperCase();
@@ -3493,6 +3494,7 @@ function trailerMasterFilteredRows() {
     const type = trailerMasterType(row);
     if (trailerMasterState.type !== "All" && type !== trailerMasterState.type) return false;
     if (trailerMasterState.division !== "All" && trailerMasterDivision(row) !== trailerMasterState.division) return false;
+    if (trailerMasterState.excludeRbox && type === "RBOX") return false;
     if (trailerMasterState.fleet !== "All" && trailerMasterFleet(row) !== trailerMasterState.fleet) return false;
     if (trailerMasterState.owner !== "All" && trailerMasterOwner(row) !== trailerMasterState.owner) return false;
     if (trailerMasterState.status !== "All" && trailerMasterStatus(row) !== trailerMasterState.status) return false;
@@ -3528,6 +3530,12 @@ function renderTrailerMasterFilters() {
   divisionHost.innerHTML = divisionOrder.map(div => `<button type="button" class="pill" data-trailer-division="${escapeHtml(div)}" aria-pressed="${trailerMasterState.division === div}">${div}</button>`).join("");
   divisionHost.querySelectorAll("[data-trailer-division]").forEach(b => b.addEventListener("click", () => { trailerMasterState.division = b.dataset.trailerDivision; trailerMasterState.page = 1; updateTrailerMaster(); }));
 
+  const excludeRboxBtn = document.getElementById("filter-exclude-rbox");
+  if (excludeRboxBtn && !excludeRboxBtn.dataset.wired) {
+    excludeRboxBtn.dataset.wired = "true";
+    excludeRboxBtn.addEventListener("click", () => { trailerMasterState.excludeRbox = !trailerMasterState.excludeRbox; trailerMasterState.page = 1; updateTrailerMaster(); });
+  }
+
   const fleets = Array.from(new Set(trailerMasterRows.map(trailerMasterFleet))).sort((a, b) => a.localeCompare(b));
   const owners = Array.from(new Set(trailerMasterRows.map(trailerMasterOwner))).sort((a, b) => a.localeCompare(b));
   const fleetSelect = document.getElementById("filter-trailerfleet");
@@ -3545,7 +3553,7 @@ function renderTrailerMasterFilters() {
 
   document.getElementById("trailer-master-search").addEventListener("input", e => { trailerMasterState.search = e.target.value; trailerMasterState.page = 1; updateTrailerMaster(); });
   document.getElementById("reset-trailer-master").addEventListener("click", () => {
-    Object.assign(trailerMasterState, {type: "All", division: "All", fleet: "All", owner: "All", status: "All", search: "", page: 1});
+    Object.assign(trailerMasterState, {type: "All", division: "All", fleet: "All", owner: "All", status: "All", excludeRbox: false, search: "", page: 1});
     fleetSelect.value = "All"; ownerSelect.value = "All"; document.getElementById("trailer-master-search").value = "";
     updateTrailerMaster();
   });
@@ -3563,6 +3571,8 @@ function syncTrailerMasterFilterButtons() {
   document.querySelectorAll("[data-trailer-type]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.type === b.dataset.trailerType ? "true" : "false"));
   document.querySelectorAll("[data-trailer-division]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.division === b.dataset.trailerDivision ? "true" : "false"));
   document.querySelectorAll("[data-trailer-status]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.status === b.dataset.trailerStatus ? "true" : "false"));
+  const excludeRboxBtn = document.getElementById("filter-exclude-rbox");
+  if (excludeRboxBtn) excludeRboxBtn.setAttribute("aria-pressed", trailerMasterState.excludeRbox ? "true" : "false");
 }
 function renderTrailerMasterTicker(rows) {
   const active = rows.filter(r => trailerMasterStatus(r) === "Active");

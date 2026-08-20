@@ -47,6 +47,7 @@ OPTIONAL_PLACEHOLDERS = {
     "/*__PACCAR_LESSEE_DATA__*/": (OUT_DIR / "paccar_lessee_data.json", {"inspectionSource": None, "reportDate": None, "rtdReportDate": None, "portalUrl": None, "units": []}),
     "/*__REVENUE_ANALYSIS_DATA__*/": (OUT_DIR / "revenue_analysis_data.json", {"checkedAt": None, "periodStart": None, "periodEnd": None, "totals": None, "byOwnership": [], "byTerminal": [], "idleIron": {"thresholdDays": 5, "count": 0, "ghostCount": 0, "units": []}, "dataIntegrity": {}, "droppedSections": {}}),
     "/*__REVENUE_NARRATIVE_DATA__*/": (OUT_DIR / "revenue_narrative.json", {"writtenAt": None, "html": None}),
+    "/*__SAMSARA_DRIVER_DATA__*/": (OUT_DIR / "samsara_driver_data.json", {"checkedAt": None, "matchedDriverCount": 0, "fuelReport": {"matched": 0, "unmatchedCount": 0}, "safetyReport": {"matched": 0, "unmatchedCount": 0}, "drivers": []}),
 }
 
 

@@ -52,6 +52,8 @@ import parse_unbilled_orders
 import parse_service_incidents
 import parse_revenue_goal
 import build_revenue_analysis
+import parse_driver_roster
+import parse_samsara_drivers
 import derive_lease_fields
 import build_dashboard_data
 import build_paccar_lessee_data
@@ -89,6 +91,8 @@ def main():
     _run_optional("[3e/6] parse_service_incidents", parse_service_incidents)
     _run_optional("[3f/6] parse_revenue_goal", parse_revenue_goal)
     _run_optional("[3g/6] build_revenue_analysis", build_revenue_analysis)
+    _run_optional("[3h/6] parse_driver_roster", parse_driver_roster)
+    _run_optional("[3i/6] parse_samsara_drivers", parse_samsara_drivers)
 
     print("\n--- derive_lease_fields ---")
     derive_lease_fields.main()

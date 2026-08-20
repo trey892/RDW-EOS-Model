@@ -1271,6 +1271,7 @@ const SOURCE_DATA = /*__SOURCE_DATA__*/;
 const PACCAR_LESSEE_DATA = /*__PACCAR_LESSEE_DATA__*/;
 const REVENUE_ANALYSIS_DATA = /*__REVENUE_ANALYSIS_DATA__*/;
 const REVENUE_NARRATIVE_DATA = /*__REVENUE_NARRATIVE_DATA__*/;
+const SAMSARA_DRIVER_DATA = /*__SAMSARA_DRIVER_DATA__*/;
 
 // Static source-document links (fixed URLs, not generated per-request) -- verified
 // directly against the prior fleet-site dashboard's own source, not guessed.
@@ -3486,6 +3487,47 @@ function renderRevenue() {
   integFlags.innerHTML = flagsHtml || `<div class="panel-note">No integrity flags this run.</div>`;
   pInteg.appendChild(integFlags);
   grid.appendChild(pInteg);
+
+  /* Panel: Driver Safety & Efficiency -- Samsara scheduled reports (Trey set up 2026-08-20),
+     joined to the McLeod driver roster by normalized name since Samsara has no code/tractor key.
+     Match rate shown honestly -- Samsara tracks a broader historical driver population than the
+     current active roster, so well under 100% match is expected, not a bug. */
+  const sam = SAMSARA_DRIVER_DATA;
+  const samDrivers = (sam?.drivers || []).filter(d => d.safetyScore != null || d.mpg != null);
+  if (samDrivers.length) {
+    const pSam = panel("Driver Safety & Efficiency", "Samsara, joined to McLeod roster by name &middot; best-effort match, unmatched excluded", "sam-svg-unused");
+    pSam.querySelector("svg").remove();
+    const withSafety = samDrivers.filter(d => d.safetyScore != null);
+    const withMpg = samDrivers.filter(d => d.mpg != null);
+    const avgSafety = withSafety.length ? withSafety.reduce((s, d) => s + Number(d.safetyScore), 0) / withSafety.length : null;
+    const avgMpg = withMpg.length ? withMpg.reduce((s, d) => s + Number(d.mpg), 0) / withMpg.length : null;
+    const samKpis = document.createElement("div");
+    samKpis.className = "readiness-kpis";
+    samKpis.innerHTML = `
+      <div class="readiness-kpi"><div class="rk-label">Matched drivers</div><div class="rk-value">${fmtNum(samDrivers.length)}</div><div class="rk-sub">${fmtNum(sam?.fuelReport?.unmatchedCount || 0)} unmatched (fuel report)</div></div>
+      <div class="readiness-kpi ${avgSafety != null && avgSafety < 90 ? "warn" : "good"}"><div class="rk-label">Avg safety score</div><div class="rk-value">${avgSafety != null ? avgSafety.toFixed(0) : "—"}</div><div class="rk-sub">last 30 days</div></div>
+      <div class="readiness-kpi"><div class="rk-label">Avg MPG</div><div class="rk-value">${avgMpg != null ? avgMpg.toFixed(2) : "—"}</div><div class="rk-sub">last 7 days</div></div>`;
+    pSam.appendChild(samKpis);
+
+    const lowSafety = [...withSafety].sort((a, b) => a.safetyScore - b.safetyScore).slice(0, 5);
+    if (lowSafety.length) {
+      const wrap = document.createElement("div");
+      wrap.className = "svcinc-section";
+      wrap.innerHTML = `<div class="svcinc-section-head"><span>Lowest safety scores</span><span>Score</span></div>` +
+        lowSafety.map(d => `<div class="svcinc-row"><span class="svcinc-terminal">${escapeHtml(d.rosterName || d.samsaraName)}</span><span class="svcinc-track"><span class="svcinc-fill" style="width:${d.safetyScore}%;background:${d.safetyScore < 80 ? "var(--critical)" : d.safetyScore < 90 ? "var(--warning)" : "var(--accent)"}"></span></span><span class="svcinc-count">${d.safetyScore}</span></div>`).join("");
+      pSam.appendChild(wrap);
+    }
+    const highIdle = [...samDrivers].filter(d => d.idleTimeMinutes != null).sort((a, b) => b.idleTimeMinutes - a.idleTimeMinutes).slice(0, 5);
+    if (highIdle.length) {
+      const maxIdle = Math.max(...highIdle.map(d => d.idleTimeMinutes));
+      const wrap = document.createElement("div");
+      wrap.className = "svcinc-section";
+      wrap.innerHTML = `<div class="svcinc-section-head"><span>Highest engine idle time (7d)</span><span>Hours</span></div>` +
+        highIdle.map(d => `<div class="svcinc-row"><span class="svcinc-terminal">${escapeHtml(d.rosterName || d.samsaraName)}</span><span class="svcinc-track"><span class="svcinc-fill" style="width:${(d.idleTimeMinutes / maxIdle * 100)}%"></span></span><span class="svcinc-count">${(d.idleTimeMinutes / 60).toFixed(1)}</span></div>`).join("");
+      pSam.appendChild(wrap);
+    }
+    grid.appendChild(pSam);
+  }
 
   /* Panel: This Week's Analysis -- narrative, regenerated weekly by whatever runs the scheduled
      refresh (see SKILL.md), reading this same computed data. Not code-generated text. */

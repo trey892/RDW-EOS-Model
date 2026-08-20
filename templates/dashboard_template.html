@@ -2026,6 +2026,47 @@ function renderCharts(rows) {
   }));
   diverging(document.getElementById("chart-topbottom"), tb, { width: 900, height: 300 });
 
+  /* Panel: Deadhead / movement efficiency -- kept directly before Fleet & Revenue
+     by Division (2026-08-20, Trey asked for these two beside each other) so
+     they land in the same grid row. */
+  const p6 = panel("Deadhead % by Ownership", DATA.meta.movementsPeriod, "chart-deadhead");
+  grid.appendChild(p6);
+  const dhData = OWNERSHIP_ORDER.map(o => {
+    const g = byOwnership.get(o) || [];
+    return { label: o.replace(" Purchase","").replace("Owner Operator","Owner Op"), value: mean(clean(g, "deadheadPct")) || 0, color: getComputedColor(OWNERSHIP_COLOR[o]),
+      tooltip: `<b>${o}</b><br>avg deadhead: <b>${fmtPct(mean(clean(g,"deadheadPct")))}</b>` };
+  });
+  verticalBarChart(document.getElementById("chart-deadhead"), dhData, { width: 380, height: 220, format: (v) => v.toFixed(1) + "%" });
+
+  /* Panel: Division split -- two independent-scale mini charts (count vs $
+     never share one axis; see dataviz "one axis" rule) rather than one grouped
+     bar, since tractor counts (~100s) and revenue ($ thousands) at the same
+     scale make the smaller series invisible. Kept directly after Deadhead
+     (2026-08-20, Trey asked for these two beside each other). */
+  const p3 = panel("Fleet & Revenue by Division", "Chemical vs Waste", null);
+  p3.querySelector("svg").remove();
+  p3.insertBefore(legendRow(DIVISION_ORDER.map(d => ({ color: getComputedColor(DIVISION_COLOR[d]), label: d }))), null);
+  const miniWrap = document.createElement("div");
+  miniWrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
+  miniWrap.innerHTML = `
+    <div><div class="panel-note" style="margin-bottom:4px;">Tractor count</div><svg class="chart-svg" id="chart-division-count"></svg></div>
+    <div><div class="panel-note" style="margin-bottom:4px;">Annualized revenue</div><svg class="chart-svg" id="chart-division-revenue"></svg></div>
+  `;
+  p3.appendChild(miniWrap);
+  grid.appendChild(p3);
+  verticalBarChart(
+    document.getElementById("chart-division-count"),
+    DIVISION_ORDER.map(d => ({ label: d, value: (byDivision.get(d) || []).length, color: getComputedColor(DIVISION_COLOR[d]),
+      tooltip: `<b>${d}</b><br>${(byDivision.get(d) || []).length} tractors` })),
+    { width: 180, height: 200, format: (v) => fmtNum(v) }
+  );
+  verticalBarChart(
+    document.getElementById("chart-division-revenue"),
+    DIVISION_ORDER.map(d => { const g = byDivision.get(d) || []; const rev = sum(clean(g, "revenue"));
+      return { label: d, value: rev, color: getComputedColor(DIVISION_COLOR[d]), tooltip: `<b>${d}</b><br>${fmtUSDFull(rev)}` }; }),
+    { width: 180, height: 200, format: fmtUSD }
+  );
+
   /* Panel: Fuel efficiency & idle by ownership */
   const p4 = panel("Fuel Efficiency & Idle Time by Ownership", "Samsara " + DATA.meta.fuelPeriod, "chart-fuel");
   grid.appendChild(p4);
@@ -2049,18 +2090,6 @@ function renderCharts(rows) {
   p4legend.innerHTML = `<span class="lg-item"><span class="swatch" style="background:var(--accent)"></span>Avg MPG</span><span class="lg-item"><span class="swatch" style="background:var(--muted)"></span>Idle time %</span>`;
   p4.insertBefore(p4legend, p4.querySelector("svg"));
 
-  /* Panel: Deadhead / movement efficiency -- kept directly after Fuel Efficiency
-     (2026-08-20, Trey asked for these two beside each other) so they land in
-     the same grid row. */
-  const p6 = panel("Deadhead % by Ownership", DATA.meta.movementsPeriod, "chart-deadhead");
-  grid.appendChild(p6);
-  const dhData = OWNERSHIP_ORDER.map(o => {
-    const g = byOwnership.get(o) || [];
-    return { label: o.replace(" Purchase","").replace("Owner Operator","Owner Op"), value: mean(clean(g, "deadheadPct")) || 0, color: getComputedColor(OWNERSHIP_COLOR[o]),
-      tooltip: `<b>${o}</b><br>avg deadhead: <b>${fmtPct(mean(clean(g,"deadheadPct")))}</b>` };
-  });
-  verticalBarChart(document.getElementById("chart-deadhead"), dhData, { width: 380, height: 220, format: (v) => v.toFixed(1) + "%" });
-
   /* Panel: Cost structure by ownership */
   const p5 = panel("Direct Cost Structure by Ownership", "stacked annualized cost components, fleet total &middot; LP/OO show $0 fuel, maintenance & insurance by design (RDW doesn't pay those on non-Company units)", "chart-cost", true);
   grid.appendChild(p5);
@@ -2083,36 +2112,6 @@ function renderCharts(rows) {
         return sum(clean(g, s.key));
       },
     }
-  );
-
-  /* Panel: Division split -- two independent-scale mini charts (count vs $
-     never share one axis; see dataviz "one axis" rule) rather than one grouped
-     bar, since tractor counts (~100s) and revenue ($ thousands) at the same
-     scale make the smaller series invisible. Moved here 2026-08-20 (was
-     before Fuel Efficiency) so Deadhead % by Ownership pairs with Fuel
-     Efficiency & Idle Time by Ownership as Trey asked. */
-  const p3 = panel("Fleet & Revenue by Division", "Chemical vs Waste", null);
-  p3.querySelector("svg").remove();
-  p3.insertBefore(legendRow(DIVISION_ORDER.map(d => ({ color: getComputedColor(DIVISION_COLOR[d]), label: d }))), null);
-  const miniWrap = document.createElement("div");
-  miniWrap.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px;";
-  miniWrap.innerHTML = `
-    <div><div class="panel-note" style="margin-bottom:4px;">Tractor count</div><svg class="chart-svg" id="chart-division-count"></svg></div>
-    <div><div class="panel-note" style="margin-bottom:4px;">Annualized revenue</div><svg class="chart-svg" id="chart-division-revenue"></svg></div>
-  `;
-  p3.appendChild(miniWrap);
-  grid.appendChild(p3);
-  verticalBarChart(
-    document.getElementById("chart-division-count"),
-    DIVISION_ORDER.map(d => ({ label: d, value: (byDivision.get(d) || []).length, color: getComputedColor(DIVISION_COLOR[d]),
-      tooltip: `<b>${d}</b><br>${(byDivision.get(d) || []).length} tractors` })),
-    { width: 180, height: 200, format: (v) => fmtNum(v) }
-  );
-  verticalBarChart(
-    document.getElementById("chart-division-revenue"),
-    DIVISION_ORDER.map(d => { const g = byDivision.get(d) || []; const rev = sum(clean(g, "revenue"));
-      return { label: d, value: rev, color: getComputedColor(DIVISION_COLOR[d]), tooltip: `<b>${d}</b><br>${fmtUSDFull(rev)}` }; }),
-    { width: 180, height: 200, format: fmtUSD }
   );
 
   /* Panel: Coming eligible for LP -- Company tractors approaching the 600k-mile

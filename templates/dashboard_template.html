@@ -1275,7 +1275,9 @@ const REVENUE_NARRATIVE_DATA = /*__REVENUE_NARRATIVE_DATA__*/;
 // Static source-document links (fixed URLs, not generated per-request) -- verified
 // directly against the prior fleet-site dashboard's own source, not guessed.
 const DOWN_REPORT_SOURCE_URL = "https://robbiedwood-my.sharepoint.com/:x:/g/personal/trey_robbiedwood_onmicrosoft_com/IQAVsWer94RiRqDZsTxL2jgrAZSE_q2xnHxQ7lzbEtT5TA4?e=vgVrNB";
-const ORIENTATION_SOURCE_URL = (SOURCE_DATA?.files || []).find(f => f.name === "Orientation.xlsm")?.url || "https://drive.google.com/drive/folders/1uD98KZD7BaTsqCfclRKtBI7lwTgoH9a3";
+// Trey asked (2026-08-20) for this to go straight to the real SharePoint source
+// workbook, not the synced Drive copy/folder -- pinned directly, no SOURCE_DATA lookup.
+const ORIENTATION_SOURCE_URL = "https://robbiedwood-my.sharepoint.com/:x:/g/personal/trey_robbiedwood_onmicrosoft_com/IQAnY5Z8tiUVSbZwa4B0RrMsAfYbbA4TPhcTU_oYgicR6Dk?e=Mgh3R2";
 const SERVICE_INCIDENTS_SOURCE_URL = "https://drive.google.com/drive/folders/1oGIyA_0U6XLYjmv3mVadsH3xIYbkVh5k";
 
 const fmtUSD = (v) => v == null ? "—" : (Math.abs(v) >= 1000 ? "$" + Math.round(v / 1000).toLocaleString() + "k" : "$" + Math.round(v).toLocaleString());

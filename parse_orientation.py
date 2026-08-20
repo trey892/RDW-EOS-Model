@@ -89,12 +89,16 @@ def main():
         })
 
     from collections import Counter
-    fleet_counts = Counter(d["ownership"] or "UNKNOWN" for d in drivers)
     terminal_counts = Counter(d["terminal"] or "UNKNOWN" for d in drivers)
-    fleets = [
-        {"fleet": k, "count": v, "company": fleet_counts.get("CO", 0), "ownerOperator": fleet_counts.get("OO", 0)}
-        for k, v in terminal_counts.items()
-    ]
+    fleets = []
+    for terminal, count in terminal_counts.items():
+        terminal_drivers = [d for d in drivers if (d["terminal"] or "UNKNOWN") == terminal]
+        fleets.append({
+            "fleet": terminal,
+            "count": count,
+            "company": sum(1 for d in terminal_drivers if d["ownership"] == "CO"),
+            "ownerOperator": sum(1 for d in terminal_drivers if d["ownership"] == "OO"),
+        })
 
     out = {
         "classDate": class_date.isoformat(),

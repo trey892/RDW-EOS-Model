@@ -2219,8 +2219,15 @@ const ASSET_TYPE_COLOR = { TRACTOR: "var(--s-company)", TRAILER: "var(--s-lp)", 
 
 const assetState = { assetType: "All", ownership: "All", terminal: "All", excludeRbox: false, search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
 
+// The raw "terminal" field on asset records has data-quality leakage separate from the
+// EXCLUDED_FLEET_CODES office-designation list -- RBOX/VAN/VANO/WILO are equipment-type/fleet
+// codes that ended up in the Terminal column instead, UNAS/UNASCP are "unassigned" placeholders,
+// and SHP/TCI are one-off/near-one-off values (Trey confirmed 2026-08-20 these aren't real
+// terminals; "P" -- 307 assets -- was confirmed to KEEP). Filtered here, dropdown-only: the
+// underlying assets aren't touched, they just aren't offered as a Terminal filter value.
+const ASSET_TERMINAL_DROPDOWN_EXCLUDE = new Set(["RBOX", "VAN", "VANO", "WILO", "UNAS", "UNASCP", "SHP", "TCI"]);
 function assetTerminals() {
-  const set = new Set(ASSET_DATA.assets.map(a => a.terminal).filter(Boolean));
+  const set = new Set(ASSET_DATA.assets.map(a => a.terminal).filter(Boolean).filter(t => !ASSET_TERMINAL_DROPDOWN_EXCLUDE.has(String(t).trim().toUpperCase())));
   return Array.from(set).sort();
 }
 

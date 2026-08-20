@@ -972,6 +972,7 @@
       <span class="fg-label">Terminal</span>
       <select class="pill" id="filter-assetterminal"></select>
     </div>
+    <div class="filter-group"><span class="fg-label">&nbsp;</span><button type="button" class="pill" id="filter-asset-exclude-rbox" aria-pressed="false">Exclude Roll-Off Box</button></div>
     <div class="filter-group" style="flex:1; min-width:200px;">
       <input type="search" class="pill" id="asset-search" placeholder="Search asset #, make, model&hellip;" style="width:100%; max-width:260px; border-radius:8px; cursor:text;">
     </div>
@@ -2216,7 +2217,7 @@ const ASSET_TYPE_ORDER = ["TRACTOR", "TRAILER", "RBOX"];
 const ASSET_TYPE_LABEL = { TRACTOR: "Tractor", TRAILER: "Trailer", RBOX: "Roll-off Box" };
 const ASSET_TYPE_COLOR = { TRACTOR: "var(--s-company)", TRAILER: "var(--s-lp)", RBOX: "var(--s-oo)" };
 
-const assetState = { assetType: "All", ownership: "All", terminal: "All", search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
+const assetState = { assetType: "All", ownership: "All", terminal: "All", excludeRbox: false, search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
 
 function assetTerminals() {
   const set = new Set(ASSET_DATA.assets.map(a => a.terminal).filter(Boolean));
@@ -2229,6 +2230,7 @@ function filteredAssets() {
     if (assetState.assetType !== "All" && a.assetType !== assetState.assetType) return false;
     if (assetState.ownership !== "All" && a.ownership !== assetState.ownership) return false;
     if (assetState.terminal !== "All" && a.terminal !== assetState.terminal) return false;
+    if (assetState.excludeRbox && a.assetType === "RBOX") return false;
     if (q) {
       const hay = `${a.assetId} ${a.make || ""} ${a.model || ""}`.toLowerCase();
       if (!hay.includes(q)) return false;
@@ -2572,9 +2574,12 @@ function renderAssetFilters() {
   });
   termSelect.onchange = () => { assetState.terminal = termSelect.value; assetState.page = 1; updateAssets(); };
 
+  const excludeRboxBtn = document.getElementById("filter-asset-exclude-rbox");
+  excludeRboxBtn.onclick = () => { assetState.excludeRbox = !assetState.excludeRbox; assetState.page = 1; updateAssets(); };
+
   document.getElementById("asset-search").oninput = (e) => { assetState.search = e.target.value; assetState.page = 1; updateAssets(); };
   document.getElementById("reset-asset-filters").onclick = () => {
-    assetState.assetType = "All"; assetState.ownership = "All"; assetState.terminal = "All"; assetState.search = ""; assetState.page = 1;
+    assetState.assetType = "All"; assetState.ownership = "All"; assetState.terminal = "All"; assetState.excludeRbox = false; assetState.search = ""; assetState.page = 1;
     document.getElementById("asset-search").value = "";
     updateAssets();
   };
@@ -2604,6 +2609,7 @@ function updateAssets() {
     const key = btn.parentElement.id.includes("assettype") ? "assetType" : "ownership";
     btn.setAttribute("aria-pressed", assetState[key] === btn.dataset.value ? "true" : "false");
   });
+  document.getElementById("filter-asset-exclude-rbox").setAttribute("aria-pressed", assetState.excludeRbox ? "true" : "false");
 }
 
 /* =========================================================================

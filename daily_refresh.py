@@ -10,6 +10,10 @@ Runs the full daily refresh pipeline in order. Expects, before this runs:
       data/raw/PM_Compliance_latest.csv    (PM Compliance % by vehicle)
       data/raw/Unbilled_Orders_latest.txt  (Unbilled Orders by terminal, PDF text
                                              pre-extracted via Drive's read_file_content)
+      data/raw/Service_Incidents_latest.txt (Service Incidents by terminal, PDF text
+                                             pre-extracted via Drive's read_file_content --
+                                             requires data/raw's tractor_status already
+                                             parsed this run, see parse_service_incidents.py)
 
 Produces, in order:
   1. output/pm_due_data.json          (parse_pm_due)
@@ -37,6 +41,7 @@ import parse_tractor_status
 import parse_orientation
 import parse_pm_compliance
 import parse_unbilled_orders
+import parse_service_incidents
 import derive_lease_fields
 import build_dashboard_data
 import build_paccar_lessee_data
@@ -72,6 +77,7 @@ def main():
     _run_optional("[3b/6] parse_orientation", parse_orientation)
     _run_optional("[3c/6] parse_pm_compliance", parse_pm_compliance)
     _run_optional("[3d/6] parse_unbilled_orders", parse_unbilled_orders)
+    _run_optional("[3e/6] parse_service_incidents", parse_service_incidents)
 
     print("\n--- derive_lease_fields ---")
     derive_lease_fields.main()

@@ -647,6 +647,30 @@
   .orientation-link:hover { text-decoration:underline; }
   @media (max-width:440px) { .orientation-hero { grid-template-columns:1fr; } .orientation-total { text-align:left; } }
 
+  /* ---------------- Service Incidents By Terminal ---------------- */
+  .svcinc-panel { align-self:stretch; min-height:100%; }
+  .svcinc-hero { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; padding:14px 15px; border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:9px; background:linear-gradient(125deg, var(--accent-wash), var(--surface-2) 68%); }
+  .svcinc-period-label { color:var(--muted); font-size:9.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+  .svcinc-period { margin-top:4px; color:var(--ink); font-size:clamp(19px,2.6vw,25px); font-weight:800; letter-spacing:-.03em; line-height:1.15; }
+  .svcinc-period-sub { margin-top:5px; color:var(--ink-2); font-size:11px; }
+  .svcinc-total { min-width:76px; text-align:center; }
+  .svcinc-total-value { color:var(--accent); font:800 35px/1 ui-monospace,monospace; }
+  .svcinc-total-label { margin-top:5px; color:var(--muted); font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .svcinc-section { border-top:1px solid var(--border); padding-top:10px; margin-top:10px; }
+  .svcinc-section-head { display:flex; justify-content:space-between; gap:10px; margin-bottom:7px; color:var(--muted); font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+  .svcinc-row { display:grid; grid-template-columns:52px minmax(90px,1fr) 34px; gap:8px; align-items:center; min-height:27px; }
+  .svcinc-terminal { color:var(--ink); font-weight:800; }
+  .svcinc-track { height:9px; overflow:hidden; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); }
+  .svcinc-fill { display:block; height:100%; min-width:6px; border-radius:999px; background:var(--accent); }
+  .svcinc-count { color:var(--ink); font-family:ui-monospace,monospace; font-weight:800; text-align:right; }
+  .svcinc-gap { display:flex; align-items:center; gap:6px; padding:7px 9px; border:1px solid var(--border); border-radius:7px; background:var(--surface-2); color:var(--ink-2); font-size:10.5px; }
+  .svcinc-gap strong { color:var(--ink); font-family:ui-monospace,monospace; }
+  .svcinc-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+  .svcinc-source { color:var(--muted); font-size:10px; }
+  .svcinc-link { display:inline-flex; align-items:center; gap:5px; color:var(--accent); font-size:10.5px; font-weight:800; text-decoration:none; }
+  .svcinc-link:hover { text-decoration:underline; }
+  @media (max-width:440px) { .svcinc-hero { grid-template-columns:1fr; } .svcinc-total { text-align:left; } }
+
   /* ---------------- Available Trucks (RTD filterable) ---------------- */
   .rtd-availability-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-bottom:10px; }
   .rtd-availability-summary > div { padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
@@ -1206,6 +1230,7 @@ const LEASE_DATA = /*__LEASE_DATA__*/;
 const ORIENTATION_DATA = /*__ORIENTATION_DATA__*/;
 const PM_COMPLIANCE_DATA = /*__PM_COMPLIANCE_DATA__*/;
 const UNBILLED_ORDER_DATA = /*__UNBILLED_ORDER_DATA__*/;
+const SERVICE_INCIDENTS_DATA = /*__SERVICE_INCIDENTS_DATA__*/;
 const SOURCE_DATA = /*__SOURCE_DATA__*/;
 const PACCAR_LESSEE_DATA = /*__PACCAR_LESSEE_DATA__*/;
 const REVENUE_MODULE_HTML = /*__REVENUE_MODULE_HTML__*/;
@@ -1214,6 +1239,7 @@ const REVENUE_MODULE_HTML = /*__REVENUE_MODULE_HTML__*/;
 // directly against the prior fleet-site dashboard's own source, not guessed.
 const DOWN_REPORT_SOURCE_URL = "https://robbiedwood-my.sharepoint.com/:x:/g/personal/trey_robbiedwood_onmicrosoft_com/IQAVsWer94RiRqDZsTxL2jgrAZSE_q2xnHxQ7lzbEtT5TA4?e=vgVrNB";
 const ORIENTATION_SOURCE_URL = (SOURCE_DATA?.files || []).find(f => f.name === "Orientation.xlsm")?.url || "https://drive.google.com/drive/folders/1uD98KZD7BaTsqCfclRKtBI7lwTgoH9a3";
+const SERVICE_INCIDENTS_SOURCE_URL = "https://drive.google.com/drive/folders/1oGIyA_0U6XLYjmv3mVadsH3xIYbkVh5k";
 
 const fmtUSD = (v) => v == null ? "—" : (Math.abs(v) >= 1000 ? "$" + Math.round(v / 1000).toLocaleString() + "k" : "$" + Math.round(v).toLocaleString());
 const fmtUSDFull = (v) => v == null ? "—" : "$" + Math.round(v).toLocaleString();
@@ -1742,6 +1768,41 @@ function renderCharts(rows) {
   orientFooter.innerHTML = `<span class="orientation-source">Source: ${escapeHtml(ORIENTATION_DATA?.source || "Orientation.xlsm")}</span>`;
   pOrientation.appendChild(orientFooter);
   grid.appendChild(pOrientation);
+
+  /* Panel: Service Incidents By Terminal -- real source: McLeod Service Incident
+     Report By Customer. That report has no Terminal column; terminal here is
+     DERIVED from each incident's Driver Manager code, cross-matched against that
+     code's majority Fleet in the same-day RTD tractor listing (see
+     parse_service_incidents.py). Unparsed/unmapped rows are shown, not hidden. */
+  const pSvcInc = panel("Service Incidents By Terminal", `derived from Driver Manager &middot; McLeod &middot; <a class="source-open" href="${SERVICE_INCIDENTS_SOURCE_URL}" target="_blank" rel="noopener noreferrer">View Reports &#8599;</a>`, "svcinc-svg-unused");
+  pSvcInc.classList.add("svcinc-panel");
+  pSvcInc.querySelector("svg").remove();
+  const svcincRows = SERVICE_INCIDENTS_DATA?.rows || [];
+  const svcincTotal = svcincRows.reduce((s, r) => s + (r.count || 0), 0);
+  const svcincMax = Math.max(1, ...svcincRows.map(r => r.count || 0));
+  const svcincReportTotal = SERVICE_INCIDENTS_DATA?.reportTotalIncidents;
+  const svcincUnparsed = SERVICE_INCIDENTS_DATA?.unparsedIncidents || 0;
+  const svcincUnmapped = SERVICE_INCIDENTS_DATA?.unmappedIncidents || 0;
+  const svcincGap = svcincUnparsed + svcincUnmapped;
+  const svcincHero = document.createElement("div");
+  svcincHero.className = "svcinc-hero";
+  svcincHero.innerHTML = `<div><div class="svcinc-period-label">Period</div><div class="svcinc-period">${escapeHtml(SERVICE_INCIDENTS_DATA?.dateRangeLabel || "Not available")}</div><div class="svcinc-period-sub">${svcincReportTotal != null ? fmtNum(svcincReportTotal) + " total service incidents reported" : "No report loaded yet"}</div></div><div class="svcinc-total"><div class="svcinc-total-value">${fmtNum(svcincTotal)}</div><div class="svcinc-total-label">Mapped to terminal</div></div>`;
+  pSvcInc.appendChild(svcincHero);
+  const svcincByTerminal = document.createElement("div");
+  svcincByTerminal.className = "svcinc-section";
+  svcincByTerminal.innerHTML = `<div class="svcinc-section-head"><span>By terminal</span><span>Incidents</span></div>` + (svcincRows.length ? svcincRows.map(r => `<div class="svcinc-row"><span class="svcinc-terminal">${escapeHtml(r.terminal)}</span><span class="svcinc-track"><span class="svcinc-fill" style="width:${(r.count / svcincMax * 100)}%"></span></span><span class="svcinc-count">${fmtNum(r.count)}</span></div>`).join("") : `<div class="panel-note">No service incident data loaded yet.</div>`);
+  pSvcInc.appendChild(svcincByTerminal);
+  if (svcincGap > 0) {
+    const svcincGapDiv = document.createElement("div");
+    svcincGapDiv.className = "svcinc-section";
+    svcincGapDiv.innerHTML = `<div class="svcinc-gap">&#9888; <strong>${fmtNum(svcincGap)}</strong> incident${svcincGap === 1 ? "" : "s"} not shown above (${fmtNum(svcincUnmapped)} with a driver manager we can't map to a terminal, ${fmtNum(svcincUnparsed)} unparsed) -- not silently folded into any terminal.</div>`;
+    pSvcInc.appendChild(svcincGapDiv);
+  }
+  const svcincFooter = document.createElement("div");
+  svcincFooter.className = "svcinc-footer";
+  svcincFooter.innerHTML = `<span class="svcinc-source">Source: ${escapeHtml(SERVICE_INCIDENTS_DATA?.source || "McLeod Service Incident Report")} &middot; terminal is derived, not a McLeod field</span>`;
+  pSvcInc.appendChild(svcincFooter);
+  grid.appendChild(pSvcInc);
 
   /* Panel: Available Trucks -- filterable by Assigned Driver, RTD Status, Style.
      Derived directly from tractor rows (style/assignedDriverRaw/dispatchStatus

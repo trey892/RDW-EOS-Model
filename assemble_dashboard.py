@@ -4,7 +4,7 @@ dashboard_template.html in place of its placeholder markers. Run after
 build_dashboard_data.py / build_asset_data.py / build_maintenance_data.py
 (and extract_lease_data.py, if lease_data.json needs refreshing).
 
-The three "optional source" datasets (orientation/pm_compliance/unbilled_orders)
+The "optional source" datasets (orientation/pm_compliance/unbilled_orders/service_incidents)
 fall back to an empty-shaped default if their JSON doesn't exist yet (e.g. very
 first run, or that day's Drive pull found nothing) -- the dashboard should
 render fine with those panels showing "no data" rather than the whole assemble
@@ -42,6 +42,7 @@ OPTIONAL_PLACEHOLDERS = {
     "/*__ORIENTATION_DATA__*/": (OUT_DIR / "orientation_data.json", {"classDate": None, "classDateLabel": None, "driverCount": 0, "drivers": [], "fleets": []}),
     "/*__PM_COMPLIANCE_DATA__*/": (OUT_DIR / "pm_compliance_data.json", {"dateRange": None, "reportDate": None, "vehicles": []}),
     "/*__UNBILLED_ORDER_DATA__*/": (OUT_DIR / "unbilled_orders_data.json", {"checkedAt": None, "orderCount": 0, "totalCharges": 0, "rows": []}),
+    "/*__SERVICE_INCIDENTS_DATA__*/": (OUT_DIR / "service_incidents_data.json", {"checkedAt": None, "dateRangeLabel": None, "reportTotalIncidents": None, "parsedIncidents": 0, "unparsedIncidents": 0, "unmappedIncidents": 0, "rows": []}),
     "/*__SOURCE_DATA__*/": (OUT_DIR / "sources_data.json", {"checkedAt": None, "files": []}),
     "/*__PACCAR_LESSEE_DATA__*/": (OUT_DIR / "paccar_lessee_data.json", {"inspectionSource": None, "reportDate": None, "rtdReportDate": None, "portalUrl": None, "units": []}),
 }

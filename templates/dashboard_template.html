@@ -680,6 +680,11 @@
   .svcinc-link:hover { text-decoration:underline; }
   @media (max-width:440px) { .svcinc-hero { grid-template-columns:1fr; } .svcinc-total { text-align:left; } }
 
+  /* ---------------- Assets by Unit Number (compact list, Asset Inventory) ---------------- */
+  .asset-byunit-panel { align-self:stretch; min-height:100%; }
+  .asset-byunit-scroll { max-height:560px; overflow-y:auto; }
+  .asset-byunit-scroll table.data-table thead th { position:sticky; top:0; z-index:1; background:var(--surface); }
+
   /* ---------------- Available Trucks (RTD filterable) ---------------- */
   .rtd-availability-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-bottom:10px; }
   .rtd-availability-summary > div { padding:9px 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); }
@@ -2387,6 +2392,27 @@ function renderAssetCharts(rows) {
       </table>`
     : `<div class="panel-note">No tractors currently flagged TOSELL in the current selection.</div>`;
   p5.appendChild(tosellWrap);
+
+  /* Panel 5b: Assets by Unit Number -- quick-glance list, sorted by unit
+     number, respecting whatever Type/Ownership/Terminal filters are active
+     on this page. The full sortable/searchable/paginated version is the
+     Asset Register table at the bottom of the page; this is the compact
+     version placed here so it doesn't need scrolling all the way down just
+     to look up a unit while looking at the panels above. */
+  const p5b = panel("Assets by Unit Number", `${fmtNum(rows.length)} in current selection`, "asset-byunit-svg-unused");
+  p5b.querySelector("svg").remove();
+  p5b.classList.add("asset-byunit-panel");
+  grid.appendChild(p5b);
+  const byUnitSorted = [...rows].sort((a, b) => String(a.assetId).localeCompare(String(b.assetId)));
+  const byUnitWrap = document.createElement("div");
+  byUnitWrap.className = "table-wrap asset-byunit-scroll";
+  byUnitWrap.innerHTML = byUnitSorted.length
+    ? `<table class="data-table">
+        <thead><tr><th>Unit #</th><th>Type</th><th>Terminal</th><th>Ownership</th></tr></thead>
+        <tbody>${byUnitSorted.map(a => `<tr><td class="mono">${a.assetId}</td><td>${ASSET_TYPE_LABEL[a.assetType] || a.assetType || "—"}</td><td>${a.terminal || "&mdash;"}</td><td>${a.ownership || "&mdash;"}</td></tr>`).join("")}</tbody>
+      </table>`
+    : `<div class="panel-note">No assets in the current selection.</div>`;
+  p5b.appendChild(byUnitWrap);
 
   /* Panel 6: Trade/Sell Suggestion -- a blended score (not mileage alone),
      scoped to Company-owned tractors (RDW's own capital decision; LP/OO

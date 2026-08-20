@@ -118,11 +118,12 @@
     font-variant-numeric: tabular-nums;
   }
   .eyebrow {
-    font-size: 11px;
+    font-size: 9.5px;
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     color: var(--ink-2);
+    line-height: 1.2;
   }
 
   /* ---------- Header / gantry ---------- */
@@ -131,7 +132,7 @@
     background: linear-gradient(155deg, var(--chrome-1) 0%, var(--surface) 38%, var(--chrome-2) 76%, var(--chrome-1) 100%);
     border-bottom: 3px solid var(--accent);
     box-shadow: 0 1px 0 var(--chrome-hi) inset, 0 6px 22px rgba(0,0,0,.22);
-    padding: 10px clamp(16px, 4vw, 40px) 0;
+    padding: 6px clamp(16px, 4vw, 40px) 0;
     position: relative;
     overflow: hidden;
   }
@@ -147,13 +148,17 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     position: relative;
-    padding-bottom: 8px;
+    padding-bottom: 4px;
+  }
+  .gantry-row > div { min-width: 0; }
+  @media (max-width: 700px) {
+    .gantry-row { flex-wrap: wrap; }
   }
   .gantry h1 {
-    margin: 1px 0 0;
-    font-size: clamp(17px, 2.1vw, 21px);
+    margin: 0;
+    font-size: clamp(14px, 1.7vw, 17px);
     font-weight: 800;
     letter-spacing: -0.01em;
     text-wrap: balance;
@@ -161,13 +166,14 @@
     -webkit-background-clip: text; background-clip: text; color: transparent;
   }
   .gantry .meta {
-    font-size: 11px;
+    font-size: 10px;
+    line-height: 1.35;
     color: var(--ink-2);
     max-width: 60ch;
   }
   .gantry .meta .mono { color: var(--ink); }
   .theme-note {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--muted);
     text-align: right;
   }
@@ -181,7 +187,7 @@
   }
   .status-item {
     display: flex; align-items: baseline; gap: 6px;
-    padding: 4px clamp(16px, 4vw, 40px) 4px 0;
+    padding: 2.5px clamp(16px, 4vw, 40px) 2.5px 0;
     margin-left: clamp(16px, 4vw, 40px);
     border-left: 1px solid rgba(255,255,255,.28);
   }
@@ -440,8 +446,8 @@
     border: none;
     background: none;
     box-shadow: none;
-    padding: 4px 11px;
-    font-size: 11.5px;
+    padding: 3px 9px;
+    font-size: 11px;
   }
   .view-switch .pill:hover { border-color: transparent; }
   .view-switch .pill[aria-pressed="true"] {
@@ -527,8 +533,8 @@
   /* ---------------- Source Worksheets + feed-health header strip ---------------- */
   .feed-health {
     display:flex; align-items:center; gap:6px; flex-wrap:wrap;
-    padding:5px clamp(16px,4vw,40px); border-bottom:1px solid var(--border);
-    background:var(--surface-2); color:var(--ink-2); font-size:10px;
+    padding:3px clamp(16px,4vw,40px); border-bottom:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-2); font-size:9.5px;
   }
   .feed-health-label { font-weight:850; letter-spacing:.07em; text-transform:uppercase; color:var(--ink); margin-right:2px; }
   .feed-health-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border:1px solid var(--border); border-radius:999px; background:var(--surface); }
@@ -781,7 +787,7 @@
 
   .todo-link {
     display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: 999px;
-    background: var(--surface-2); color: var(--ink); font-size: 12px; font-weight: 750; padding: 6px 13px;
+    background: var(--surface-2); color: var(--ink); font-size: 10.5px; font-weight: 750; padding: 3px 10px;
     text-decoration: none; white-space: nowrap;
   }
   .todo-link:hover { border-color: var(--accent); color: var(--accent); }

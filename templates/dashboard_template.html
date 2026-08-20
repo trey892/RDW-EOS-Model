@@ -4295,7 +4295,10 @@ window.addEventListener("resize", () => {
     const refreshEl = document.getElementById("header-refresh");
     const clockEl = document.getElementById("header-clock");
     if (versionEl) versionEl.textContent = DATA?.meta?.modelVersion != null ? "v" + DATA.meta.modelVersion : "—";
-    if (refreshEl) refreshEl.textContent = fmtRefreshTs(DATA?.meta?.lastRefreshed);
+    // pipelineRunAt (added 2026-08-20) is when the refresh pipeline last actually ran; the older
+    // lastRefreshed only moves when RTA serves a new PM Due file and stalls whenever RTA goes quiet,
+    // even though the rest of the hourly refresh keeps running fine. Fall back for old dashboard_data.json.
+    if (refreshEl) refreshEl.textContent = fmtRefreshTs(DATA?.meta?.pipelineRunAt || DATA?.meta?.lastRefreshed);
     if (clockEl) {
       const tick = () => { clockEl.textContent = new Date().toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" }); };
       tick();

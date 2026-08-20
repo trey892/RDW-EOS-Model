@@ -1,5 +1,6 @@
 """Extract a compact per-tractor JSON dataset from RDW_EOS_Master_latest.xlsx for the HTML dashboard."""
 import json
+from datetime import datetime
 from pathlib import Path
 
 import openpyxl
@@ -157,6 +158,12 @@ def main():
         "builtFrom": "RDW_EOS_Master_latest.xlsx",
         "modelVersion": version["version"],
         "lastRefreshed": version["lastRefreshed"],
+        # Distinct from lastRefreshed above -- that only moves when refresh_model.py actually runs
+        # (i.e. RTA served a new PM Due file), so it stalls whenever RTA goes quiet even though the
+        # rest of the hourly pipeline (RTD, Orientation, McLeod sources, dashboard assembly) still
+        # ran fine. This stamps every build_dashboard_data.py run, model-skip or not, so the header's
+        # "Last Refresh" reflects when the pipeline actually last ran -- not when PM Due last changed.
+        "pipelineRunAt": datetime.now().isoformat(timespec="seconds"),
         "tractorCount": len(records),
         "fuelPeriod": "2026-05-06 to 2026-08-04",
         "fuelHistoryPeriod": "Aug 2025 to Jul 2026 (invoiced fuel-card, reconciled 2026-08-03)",

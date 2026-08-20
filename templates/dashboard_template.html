@@ -1143,6 +1143,7 @@
   </div>
   <div class="filterbar">
     <div class="filter-group"><span class="fg-label">Type</span><div id="filter-trailertype"></div></div>
+    <div class="filter-group"><span class="fg-label">Division</span><div id="filter-trailerdivision"></div></div>
     <div class="filter-group"><span class="fg-label">Fleet</span><select class="pill" id="filter-trailerfleet"></select></div>
     <div class="filter-group"><span class="fg-label">Owner</span><select class="pill" id="filter-trailerowner"></select></div>
     <div class="filter-group"><span class="fg-label">Status</span><div id="filter-trailerstatus"></div></div>
@@ -1234,7 +1235,16 @@
 const DATA = /*__DATA__*/;
 const ASSET_DATA = /*__ASSET_DATA__*/;
 const MAINT_DATA = /*__MAINT_DATA__*/;
-const LEASE_DATA = /*__LEASE_DATA__*/;
+const RAW_LEASE_DATA = /*__LEASE_DATA__*/;
+// lease_data.json is hand-maintained, not produced by any script in the automated pipeline (per
+// daily_refresh.py's own docstring), so it never got the Fleet/Terminal exclusion list every other
+// build script applies via dashboard_filters.is_excluded_terminal (2026-08-19: this list). Filtering
+// here, once, keeps every LEASE_DATA consumer (Trailer Master, Leased Equipment, Insurance, drill-
+// downs) clean regardless of how lease_data.json was last produced.
+const EXCLUDED_FLEET_CODES = new Set(["ATLO", "BHMO", "CPO", "HOUO", "MAU", "MAUO", "MOBO", "MTP", "MTPB", "MTPO", "ROO"]);
+const LEASE_DATA = RAW_LEASE_DATA && Array.isArray(RAW_LEASE_DATA.units)
+  ? { ...RAW_LEASE_DATA, units: RAW_LEASE_DATA.units.filter(u => !EXCLUDED_FLEET_CODES.has(String(u.fleet || "").trim().toUpperCase())) }
+  : RAW_LEASE_DATA;
 const ORIENTATION_DATA = /*__ORIENTATION_DATA__*/;
 const PM_COMPLIANCE_DATA = /*__PM_COMPLIANCE_DATA__*/;
 const UNBILLED_ORDER_DATA = /*__UNBILLED_ORDER_DATA__*/;
@@ -3461,7 +3471,7 @@ const TRAILER_MASTER_TYPE_LABELS = {
 };
 const TRAILER_MASTER_TOWABLE_TYPES = new Set(["BT", "VAN", "F/B", "DUMP", "R/O", "VAC"]);
 const trailerMasterRows = (LEASE_DATA?.units || []).filter(row => row.assetType === "TRAILER");
-const trailerMasterState = { type: "All", fleet: "All", owner: "All", status: "All", search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
+const trailerMasterState = { type: "All", division: "All", fleet: "All", owner: "All", status: "All", search: "", sortKey: "assetId", sortDir: 1, page: 1, pageSize: 100 };
 
 function trailerMasterType(row) {
   const value = String(row.trailerEquipmentType || row.model || "").trim().toUpperCase();
@@ -3470,17 +3480,24 @@ function trailerMasterType(row) {
 function trailerMasterStatus(row) { return String(row.trailerMasterStatus || row.status || "Active"); }
 function trailerMasterOwner(row) { return String(row.owner || "Unassigned"); }
 function trailerMasterFleet(row) { return String(row.fleet || "UNAS"); }
+// No McLeod-reported Chemical/Waste division field exists on trailer records -- this infers it
+// from the trailer's own equipment type (Bulk Tank/Vacuum Tank haul liquid chemical, Roll-Off/Dump
+// haul waste), the same equipment-type grouping this codebase already uses elsewhere. Van/Flatbed
+// don't map to either and are bucketed "Other" rather than guessed into one side.
+const TRAILER_DIVISION_MAP = { "BT": "Chemical", "VAC": "Chemical", "RBOX": "Waste", "R/O": "Waste", "DUMP": "Waste" };
+function trailerMasterDivision(row) { return TRAILER_DIVISION_MAP[trailerMasterType(row)] || "Other"; }
 
 function trailerMasterFilteredRows() {
   const query = trailerMasterState.search.trim().toLowerCase();
   return trailerMasterRows.filter(row => {
     const type = trailerMasterType(row);
     if (trailerMasterState.type !== "All" && type !== trailerMasterState.type) return false;
+    if (trailerMasterState.division !== "All" && trailerMasterDivision(row) !== trailerMasterState.division) return false;
     if (trailerMasterState.fleet !== "All" && trailerMasterFleet(row) !== trailerMasterState.fleet) return false;
     if (trailerMasterState.owner !== "All" && trailerMasterOwner(row) !== trailerMasterState.owner) return false;
     if (trailerMasterState.status !== "All" && trailerMasterStatus(row) !== trailerMasterState.status) return false;
     if (query) {
-      const haystack = [row.assetId, type, row.fleet, row.owner, row.year, row.make, trailerMasterStatus(row)].filter(Boolean).join(" ").toLowerCase();
+      const haystack = [row.assetId, type, trailerMasterDivision(row), row.fleet, row.owner, row.year, row.make, trailerMasterStatus(row)].filter(Boolean).join(" ").toLowerCase();
       if (!haystack.includes(query)) return false;
     }
     return true;
@@ -3506,6 +3523,11 @@ function renderTrailerMasterFilters() {
   typeHost.innerHTML = typeOrder.map(type => `<button type="button" class="pill" data-trailer-type="${escapeHtml(type)}" aria-pressed="${trailerMasterState.type === type}">${type === "All" ? "All" : TRAILER_MASTER_TYPE_LABELS[type]}</button>`).join("");
   typeHost.querySelectorAll("[data-trailer-type]").forEach(b => b.addEventListener("click", () => { trailerMasterState.type = b.dataset.trailerType; trailerMasterState.page = 1; updateTrailerMaster(); }));
 
+  const divisionOrder = ["All", "Chemical", "Waste", "Other"];
+  const divisionHost = document.getElementById("filter-trailerdivision");
+  divisionHost.innerHTML = divisionOrder.map(div => `<button type="button" class="pill" data-trailer-division="${escapeHtml(div)}" aria-pressed="${trailerMasterState.division === div}">${div}</button>`).join("");
+  divisionHost.querySelectorAll("[data-trailer-division]").forEach(b => b.addEventListener("click", () => { trailerMasterState.division = b.dataset.trailerDivision; trailerMasterState.page = 1; updateTrailerMaster(); }));
+
   const fleets = Array.from(new Set(trailerMasterRows.map(trailerMasterFleet))).sort((a, b) => a.localeCompare(b));
   const owners = Array.from(new Set(trailerMasterRows.map(trailerMasterOwner))).sort((a, b) => a.localeCompare(b));
   const fleetSelect = document.getElementById("filter-trailerfleet");
@@ -3523,7 +3545,7 @@ function renderTrailerMasterFilters() {
 
   document.getElementById("trailer-master-search").addEventListener("input", e => { trailerMasterState.search = e.target.value; trailerMasterState.page = 1; updateTrailerMaster(); });
   document.getElementById("reset-trailer-master").addEventListener("click", () => {
-    Object.assign(trailerMasterState, {type: "All", fleet: "All", owner: "All", status: "All", search: "", page: 1});
+    Object.assign(trailerMasterState, {type: "All", division: "All", fleet: "All", owner: "All", status: "All", search: "", page: 1});
     fleetSelect.value = "All"; ownerSelect.value = "All"; document.getElementById("trailer-master-search").value = "";
     updateTrailerMaster();
   });
@@ -3539,6 +3561,7 @@ function renderTrailerMasterFilters() {
 }
 function syncTrailerMasterFilterButtons() {
   document.querySelectorAll("[data-trailer-type]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.type === b.dataset.trailerType ? "true" : "false"));
+  document.querySelectorAll("[data-trailer-division]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.division === b.dataset.trailerDivision ? "true" : "false"));
   document.querySelectorAll("[data-trailer-status]").forEach(b => b.setAttribute("aria-pressed", trailerMasterState.status === b.dataset.trailerStatus ? "true" : "false"));
 }
 function renderTrailerMasterTicker(rows) {

@@ -81,6 +81,11 @@ def main():
             "returningDriver": str(cell(r, "Returning Driver") or "").strip(),
             "ownership": ownership_raw,  # "CO" or "OO" (raw, not expanded -- source values inconsistent case)
             "ownerName": str(cell(r, "Owner Name") or "").strip(),
+            "phone": str(cell(r, "Phone#") or "").strip(),
+            "email": str(cell(r, "Email") or "").strip(),
+            "driverCode": str(cell(r, "DriverCode") or "").strip(),  # usually blank pre-orientation -- assigned once the driver is set up
+            "truckNumber": str(cell(r, "Trk #") or "").strip(),      # usually blank pre-orientation, same reason
+            "location": str(cell(r, "Location") or "").strip(),
         })
 
     from collections import Counter

@@ -279,6 +279,15 @@
     background-size: 5px 5px, 5px 5px;
     background-repeat: no-repeat;
   }
+  /* The select's own gradient background and color-scheme don't reliably reach the
+     native dropdown popup's <option> list in every browser/OS combo -- some render
+     it with the OS default (light) popup background while still inheriting our
+     light --ink-2 text color, which reads as white-on-white. Set both explicitly
+     on every option so the popup is always readable regardless of OS theme. */
+  select.pill option, select option {
+    background-color: var(--surface);
+    color: var(--ink);
+  }
   .reset-btn {
     appearance: none;
     border: none;
@@ -3817,7 +3826,7 @@ window.addEventListener("resize", () => {
     const woColumns = [col("assetId","Tractor"),col("workOrderKey","Work Order"),col("openedDate","Opened"),col("closedDate","Closed"),col("totalCost","Cost",money)];
     const unbilledColumns = [col("terminal","Terminal"),col("uniqueOrders","Unique Orders",number),col("ready","Ready",number),col("notReady","Not Ready",number),col("totalCharges","Charges",money),col("oldestDays","Oldest Days",number)];
     const pendingColumns = [col("assetId","Tractor"),col("terminal","Terminal"),col("downDays","Down Days",number),col("downStatus","Status"),col("downLocation","Location"),col("downIssue","Issue"),col("downEtaCompletion","ETA")];
-    const orientationColumns = [col("firstName","First"),col("lastName","Last"),col("terminal","Terminal"),col("returningDriver","Returning"),col("ownership","CO/OO")];
+    const orientationColumns = [col("terminal","Terminal"),col("firstName","First"),col("lastName","Last"),col("phone","Phone"),col("ownership","CO/OO"),col("returningDriver","Returning"),col("ownerName","Owner Name"),col("email","Email"),col("driverCode","Driver Code"),col("truckNumber","Truck #"),col("location","Location")];
     const paccarColumns = [col("assetId","Tractor"),col("fleetCode","Terminal"),col("stage","Stage"),col("dueLabel","Due / Action"),col("repairsOutstanding","Repairs Outstanding",number),col("days","Days in Status",number)];
 
     function sectionId(node) { return node.closest("section.view")?.id || "view-fleet"; }

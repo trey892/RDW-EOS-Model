@@ -3485,21 +3485,29 @@ function trailerMasterFleet(row) { return String(row.fleet || "UNAS"); }
 // from the trailer's own equipment type (Bulk Tank/Vacuum Tank haul liquid chemical, Roll-Off/Dump
 // haul waste), the same equipment-type grouping this codebase already uses elsewhere. Van/Flatbed
 // don't map to either and are bucketed "Other" rather than guessed into one side.
-const TRAILER_DIVISION_MAP = { "BT": "Chemical", "VAC": "Chemical", "RBOX": "Waste", "R/O": "Waste", "DUMP": "Waste" };
-function trailerMasterDivision(row) { return TRAILER_DIVISION_MAP[trailerMasterType(row)] || "Other"; }
+// Van hauls for both divisions (confirmed against real order data: a VAN trailer turns up on a
+// Waste-division load same as a Bulk Tank does on Chemical) -- so it belongs in both buckets, not
+// its own "Other". "Other" is now just what's left over (Flatbed, unclassified).
+const TRAILER_DIVISION_TYPES = { "Chemical": new Set(["BT", "VAC", "VAN"]), "Waste": new Set(["RBOX", "R/O", "DUMP", "VAN"]) };
+function trailerMasterDivisions(row) {
+  const type = trailerMasterType(row);
+  const divisions = Object.keys(TRAILER_DIVISION_TYPES).filter(d => TRAILER_DIVISION_TYPES[d].has(type));
+  return divisions.length ? divisions : ["Other"];
+}
+function trailerMasterMatchesDivision(row, division) { return trailerMasterDivisions(row).includes(division); }
 
 function trailerMasterFilteredRows() {
   const query = trailerMasterState.search.trim().toLowerCase();
   return trailerMasterRows.filter(row => {
     const type = trailerMasterType(row);
     if (trailerMasterState.type !== "All" && type !== trailerMasterState.type) return false;
-    if (trailerMasterState.division !== "All" && trailerMasterDivision(row) !== trailerMasterState.division) return false;
+    if (trailerMasterState.division !== "All" && !trailerMasterMatchesDivision(row, trailerMasterState.division)) return false;
     if (trailerMasterState.excludeRbox && type === "RBOX") return false;
     if (trailerMasterState.fleet !== "All" && trailerMasterFleet(row) !== trailerMasterState.fleet) return false;
     if (trailerMasterState.owner !== "All" && trailerMasterOwner(row) !== trailerMasterState.owner) return false;
     if (trailerMasterState.status !== "All" && trailerMasterStatus(row) !== trailerMasterState.status) return false;
     if (query) {
-      const haystack = [row.assetId, type, trailerMasterDivision(row), row.fleet, row.owner, row.year, row.make, trailerMasterStatus(row)].filter(Boolean).join(" ").toLowerCase();
+      const haystack = [row.assetId, type, ...trailerMasterDivisions(row), row.fleet, row.owner, row.year, row.make, trailerMasterStatus(row)].filter(Boolean).join(" ").toLowerCase();
       if (!haystack.includes(query)) return false;
     }
     return true;
